@@ -83,11 +83,6 @@
     opacity:.75;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
   .topbar .coords{font-size:11px;opacity:.95;text-align:right;line-height:1.25;
     color:var(--gris-tx);font-variant-numeric:tabular-nums;}
-  .fsbtn{width:40px;height:40px;border-radius:10px;background:var(--gris-bg);
-    color:var(--rojo);font-size:20px;cursor:pointer;flex:0 0 40px;display:flex;
-    align-items:center;justify-content:center;border:1px solid var(--borde);}
-  .fsbtn:active{background:var(--rojo-cla);}
-
   /* Lecturas de medición */
   #readout{position:absolute;left:12px;right:84px;
     top:calc(env(safe-area-inset-top) + 58px);z-index:28;
@@ -444,28 +439,6 @@
   .sgp-t{font-weight:800;font-size:13px;color:var(--tit);margin-bottom:3px;font-family:'Baloo 2','Montserrat',sans-serif;}
   #sigpacPop .fpinfo{font-size:11.5px;}
 
-  /* --- Puntos de calor / focos --- */
-  .tag-estado{display:inline-block;background:var(--gris-bg);color:var(--tit);border:1px solid var(--borde);
-    border-radius:12px;padding:1px 8px;font-size:11px;font-weight:800;margin-right:6px;letter-spacing:.2px;}
-  .tag-estado.pendiente{background:#fff7db;color:#8a6d00;border-color:#f5e2a0;}
-  .tag-estado.error{background:var(--rojo-cla);color:var(--rojo);border-color:#f0b4b0;}
-  .leyenda-focos{display:flex;flex-wrap:wrap;gap:8px 14px;margin:6px 0 2px;font-size:11.5px;color:var(--gris-tx);align-items:center;}
-  .leyenda-focos i{display:inline-block;width:12px;height:12px;border-radius:50%;margin-right:4px;vertical-align:-1px;
-    box-shadow:0 0 0 1px rgba(255,255,255,.85) inset;}
-  #listaFocos{margin-top:8px;max-height:180px;overflow-y:auto;border:1px solid var(--borde);border-radius:8px;
-    background:var(--gris-bg);}
-  #listaFocos:empty{display:none;}
-  .foco-item{display:flex;align-items:center;gap:8px;padding:6px 8px;border-bottom:1px solid var(--borde);cursor:pointer;font-size:12px;}
-  .foco-item:last-child{border-bottom:none;}
-  .foco-item:hover{background:var(--panel);}
-  .foco-item .punto{width:10px;height:10px;border-radius:50%;flex:0 0 10px;box-shadow:0 0 0 1px rgba(255,255,255,.85) inset;}
-  .foco-item .txt{flex:1;min-width:0;color:var(--tit);}
-  .foco-item .txt span{display:block;color:var(--gris-tx);font-size:11px;font-weight:500;}
-  .foco-item button{flex:0 0 auto;padding:3px 8px;font-size:11px;font-weight:700;background:var(--panel);
-    color:var(--rojo);border:1px solid var(--borde);border-radius:6px;cursor:pointer;}
-  .foco-item button:active{background:var(--rojo-cla);}
-  #bFocosMain.active{background:var(--rojo);color:#fff;border-color:var(--rojo);}
-
   /* ===== Rayos en tiempo real (Blitzortung) ===== */
   .rayo-mk{
     width:14px;height:14px;border-radius:50%;
@@ -584,7 +557,6 @@
       <div class="logo"><span class="gris">Ranger</span><span class="rojo">viewer</span></div>
     </div>
   </div>
-  <button class="fsbtn" id="bUndo" title="Deshacer">↩️</button>
 </div>
 
 <div id="readout"></div>
@@ -609,7 +581,6 @@
 <!-- Barra inferior -->
 <div class="tbar">
   <button class="tbtn" id="bSatMain" title="Imagen de satélite por fecha"><span class="ic">🛰️</span><span class="lab">Satélite</span></button>
-  <button class="tbtn" id="bFocosMain" title="Puntos de calor e incendios activos"><span class="ic">🔥</span><span class="lab">Focos</span></button>
   <button class="tbtn" id="bVientoMain" title="Superponer el viento en esta vista"><span class="ic">🌬️</span><span class="lab">Viento</span></button>
   <button class="tbtn" id="tPoint" title="Punto"><span class="ic">📍</span><span class="lab">Punto</span></button>
   <button class="tbtn" id="tLine" title="Línea / distancia"><span class="ic">📏</span><span class="lab">Línea</span></button>
@@ -663,7 +634,7 @@
     <p class="hint" style="margin-top:2px">Deslízalo a la izquierda para difuminar el mapa base y que se vean mejor las capas WMS superpuestas (ortofoto, satélite, etc.).</p>
   </div>
   <button class="ghost" id="bMbtImport">📦 Importar mapa MBTiles</button>
-  <input type="file" id="mbtImportFile" accept=".mbtiles" style="display:none">
+  <input type="file" id="mbtImportFile" accept=".mbtiles,application/x-sqlite3,application/octet-stream,*/*" style="display:none">
   <p class="hint" id="mbtImportInfo" style="margin-top:4px"></p>
   <p class="hint">Un archivo <b>.mbtiles</b> (exportado p. ej. desde QGIS) se guarda en esta tableta y aparece arriba como un mapa de fondo más; puedes eliminarlo con 🗑️.</p>
 
@@ -788,7 +759,7 @@ service cloud.firestore {
   <h3>Importar archivo <span class="x" data-close>✕</span></h3>
   <p class="hint">Carga un archivo <b>KMZ</b>, <b>KML</b>, <b>GPX</b> o <b>GeoJSON</b>. Sus puntos, líneas y polígonos se añadirán al mapa y a la lista de elementos.</p>
   <button class="primary" id="impPick">📂 Elegir archivo…</button>
-  <input type="file" id="impFile" accept=".kmz,.kml,.gpx,.geojson,.json" style="display:none">
+  <input type="file" id="impFile" accept=".kmz,.kml,.gpx,.geojson,.json,application/vnd.google-earth.kmz,application/vnd.google-earth.kml+xml,application/gpx+xml,application/geo+json,application/json,*/*" style="display:none">
   <div class="hint" id="impInfo" style="margin-top:10px"></div>
 </div>
 
@@ -858,7 +829,6 @@ service cloud.firestore {
   <button class="menua" id="moGoto"><span class="mi">🔎</span><span class="mt">Ir a coordenadas<small>UTM 29/30 · geográficas decimal o G.M.S.</small></span></button>
   <button class="menua" id="moSigpac"><span class="mi">🌾</span><span class="mt">Buscar parcela SIGPAC<small>por municipio o código · dibuja y exporta KMZ</small></span></button>
   <button class="menua" id="moSat"><span class="mi">🛰️</span><span class="mt">Imagen de satélite por fecha<small>MODIS · VIIRS · Sentinel-2 (NASA · Copernicus)</small></span></button>
-  <button class="menua" id="moFocos"><span class="mi">🔥</span><span class="mt">Puntos de calor e incendios activos<small>NASA FIRMS/GIBS · focos EFFIS · unión en polígonos (KMZ)</small></span></button>
   <button class="menua" id="moViento"><span class="mi">🌬️</span><span class="mt">Superponer el viento en esta vista<small>malla horaria de Open-Meteo con flechas</small></span></button>
   <button class="menua" id="moRayos"><span class="mi">⚡</span><span class="mt">Rayos en tiempo real<small>Blitzortung.org · red mundial de sensores de RF</small></span></button>
   <a class="menua" id="moMeteo" href="https://rangerbyte.github.io/meteo_V1/" target="_blank" rel="noopener" style="text-decoration:none"><span class="mi">🌦️</span><span class="mt">Meteorología<small>previsión y datos meteorológicos</small></span></a>
@@ -978,90 +948,6 @@ service cloud.firestore {
   <button class="primary" id="btnSatMostrar">👁️ Mostrar imagen</button>
   <button class="ghost" id="btnSatBuscarFecha">📅 Buscar fecha con imagen (±15 días)</button>
   <p class="hint" id="satEstado" style="margin-top:8px">Ninguna imagen de satélite cargada.</p>
-</div>
-
-<!-- Hoja: Puntos de calor e incendios activos -->
-<div class="sheet" id="sheetFocos">
-  <h3>🔥 Puntos de calor e incendios activos <span class="x" data-close>✕</span></h3>
-  <p class="hint">Superpone sobre el mapa los <b>puntos de calor</b> detectados por satélite (VIIRS y MODIS de la NASA vía FIRMS/GIBS, los mismos que usa Zoom Earth) y opcionalmente los <b>focos EFFIS</b> pinchables (Copernicus). Se combinan con cualquier mapa base.</p>
-
-  <div class="seccion-tit" style="font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:var(--gris-tx);margin:10px 2px 6px;font-weight:800">🛰 NASA GIBS (rápido, sin cuenta)</div>
-  <div class="row2">
-    <div class="field"><label>Días</label>
-      <select id="calorDias">
-        <option value="1">Solo hoy</option>
-        <option value="3" selected>Últimos 3 días</option>
-        <option value="7">Últimos 7 días</option>
-        <option value="10">Últimos 10 días</option>
-      </select>
-    </div>
-    <div class="field"><label>Sensor</label>
-      <select id="calorSensor">
-        <option value="viirs" selected>VIIRS (375 m)</option>
-        <option value="ambos">VIIRS + MODIS</option>
-        <option value="modis">Solo MODIS (1 km)</option>
-      </select>
-    </div>
-  </div>
-  <button class="primary" id="btnPuntosCalor">🔥 Ver puntos de calor</button>
-  <button class="ghost" id="btnOcultarCalor" disabled>🚫 Ocultar puntos</button>
-  <label class="chip wide"><input type="checkbox" id="chkCapaCalor" checked> Ver esta capa sobre el mapa</label>
-  <p class="hint" id="calorEstado">Sin mostrar todavía.</p>
-  <div class="leyenda-focos">
-    <span><i style="background:#ff3300"></i>hoy</span>
-    <span><i style="background:#ff8800;opacity:.75"></i>días previos</span>
-  </div>
-
-  <div class="seccion-tit" style="font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:var(--gris-tx);margin:16px 2px 6px;font-weight:800;border-top:1px dashed var(--borde);padding-top:12px">📍 Focos EFFIS pinchables (lento)</div>
-  <p class="hint">Para colorear por antigüedad y poder pinchar los focos se consultan uno a uno en EFFIS/Copernicus para el encuadre actual. Puede tardar hasta un minuto.</p>
-  <div class="row2">
-    <div class="field"><label>Periodo</label>
-      <select id="focosPeriodo">
-        <option value="today">Hoy (24 h)</option>
-        <option value="week" selected>Última semana</option>
-        <option value="month">Último mes</option>
-      </select>
-    </div>
-    <div class="field"><label>Satélite</label>
-      <select id="focosSensor">
-        <option value="all" selected>Todos</option>
-        <option value="viirs">VIIRS (375 m)</option>
-        <option value="modis">MODIS (1 km)</option>
-        <option value="s3">Sentinel-3</option>
-      </select>
-    </div>
-  </div>
-  <button class="ghost" id="btnBuscarFocos">🔎 Traer puntos con datos (EFFIS, lento)</button>
-  <p class="hint" id="focosEstado">Sin consultar todavía.</p>
-  <div class="leyenda-focos">
-    <span><i style="background:#D7263D;border-radius:2px;width:14px;height:14px"></i>&lt; 6 h (cuadrado grande, parpadea)</span>
-    <span><i style="background:#F2994A;border-radius:2px"></i>6–24 h (parpadea)</span>
-    <span><i style="background:#F2C94C;border-radius:2px"></i>1–3 d</span>
-    <span><i style="background:#2E7D32;border-radius:2px"></i>más antiguo</span>
-  </div>
-  <label class="chip wide" style="margin-top:6px"><input type="checkbox" id="chkAutoCluster" checked> 🩸 Agrupar focos cercanos en un polígono (tipo Google Maps)</label>
-  <div class="row2" style="margin-top:4px">
-    <div class="field"><label>Mín. focos</label>
-      <input type="number" id="autoClusterMin" value="4" min="2" max="50" step="1" style="flex:1;padding:8px;border:1px solid var(--borde);border-radius:8px;font-size:14px">
-    </div>
-    <div class="field"><label>Dist. máx. entre vecinos (m)</label>
-      <input type="number" id="autoClusterRad" value="800" min="100" max="5000" step="50" style="flex:1;padding:8px;border:1px solid var(--borde);border-radius:8px;font-size:14px">
-    </div>
-  </div>
-  <p class="hint" style="margin-top:-2px">Agrupa focos que estén a menos de esa distancia unos de otros (mín. <b>N focos</b>). El polígono usa como vértices los focos del borde y engloba los del interior.</p>
-  <div id="listaFocos"></div>
-
-  <div class="seccion-tit" style="font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:var(--gris-tx);margin:16px 2px 6px;font-weight:800;border-top:1px dashed var(--borde);padding-top:12px">🖼 Mancha EFFIS (WMS)</div>
-  <label class="chip wide"><input type="checkbox" id="chkCapaEFFIS"> Ver la mancha raster de focos (según el periodo elegido)</label>
-</div>
-
-<!-- Popup de foco pinchable -->
-<div id="focoPop" class="fpop" style="max-width:250px">
-  <div id="focoPopInfo" class="fpinfo" style="font-size:12.5px;color:var(--txt);line-height:1.5"></div>
-  <div class="fprow" style="display:flex;gap:6px;margin-top:6px">
-    <button class="fpb save" id="focoPopUsar" style="flex:1">📍 Fijar aquí</button>
-    <button class="fpb" id="focoPopClose">✕</button>
-  </div>
 </div>
 
 <!-- Hoja: Superponer el viento en esta vista -->
@@ -2544,7 +2430,7 @@ function placePoint(c30){
   f.set('_bg',document.getElementById('ptTransp').checked?'none':'fill');
   const nm=document.getElementById('ptName').value.trim();
   if(nm) f.set('name',nm);
-  drawSource.addFeature(f); pushUndo({type:'add',feat:f});
+  drawSource.addFeature(f);
   toast('Punto añadido'); refreshList();
 }
 document.getElementById('ptPlace').onclick=()=>{placePoint(view.getCenter());};
@@ -2613,7 +2499,7 @@ function startDraw(kind){
       /* misma norma que la línea: el área sólo aparece al pasar el cursor */
       f.set('_meas',a);
     }
-    drawSource.addFeature(f); pushUndo({type:'add',feat:f});
+    drawSource.addFeature(f);
     if(listener) ol.Observable.unByKey(listener);
     setTimeout(()=>{measureSource.clear();},250);
     refreshList();
@@ -3107,7 +2993,7 @@ trFinish.onclick=()=>{
     f.set('name','Track');
     msg='Polígono guardado: '+fmtNum(a/10000,4)+' ha';
   }
-  drawSource.addFeature(f); pushUndo({type:'add',feat:f});
+  drawSource.addFeature(f);
   refreshList(); toast(msg);
   trackReset(); trackbar.classList.remove('open');
   document.getElementById('tTrack').classList.remove('active');
@@ -3133,15 +3019,6 @@ function trackReset(){
   trFinish.disabled=true; trDelete.disabled=true; trDelete.textContent='🗑️ Eliminar';
   setTrackInfo('Listo para registrar. Pulsa <b>Iniciar</b> y camina el perímetro.');
 }
-
-/* ===================== Deshacer ===================== */
-const undoStack=[];
-function pushUndo(a){undoStack.push(a);}
-document.getElementById('bUndo').onclick=()=>{
-  const a=undoStack.pop();
-  if(!a){toast('Nada que deshacer');return;}
-  if(a.type==='add'){drawSource.removeFeature(a.feat);refreshList();toast('Deshecho');}
-};
 
 /* ===================== Lista de elementos ===================== */
 const elemList=document.getElementById('elemList');
@@ -3601,7 +3478,7 @@ async function handleImportFile(file){
     }
     feats=feats.filter(f=>f.getGeometry());
     if(!feats.length){toast('No se encontraron elementos en el archivo');return;}
-    feats.forEach(f=>{tagImported(f);drawSource.addFeature(f);pushUndo({type:'add',feat:f});});
+    feats.forEach(f=>{tagImported(f);drawSource.addFeature(f);});
     refreshList();
     const ext=ol.extent.createEmpty();
     feats.forEach(f=>ol.extent.extend(ext,f.getGeometry().getExtent()));
@@ -3701,7 +3578,7 @@ function addPointAtCoord(c30){
   const f=new ol.Feature(new ol.geom.Point(c30));
   f.set('_kind','Point');f.set('_glyph','📍');f.set('_color','#e2001a');f.set('_size',34);f.set('_bg','none');
   f.set('name','Coordenada '+Math.round(c30[0])+' '+Math.round(c30[1]));
-  drawSource.addFeature(f);pushUndo({type:'add',feat:f});refreshList();
+  drawSource.addFeature(f);refreshList();
   return f;
 }
 function showGotoMarker(c30){
@@ -4190,7 +4067,7 @@ function saveRouteToDraw(){
   f.set('_meas', lastRouteInfo?lastRouteInfo.dist:ol.sphere.getLength(f.getGeometry(),{projection:P30}));
   const lab=(PROF[prof] && PROF[prof].lab) || (prof==='manual'?'a mano':'ruta');
   f.set('name','Ruta '+lab+' '+((f.get('_meas')||0)/1000).toFixed(2)+' km');
-  drawSource.addFeature(f); pushUndo({type:'add',feat:f}); refreshList();
+  drawSource.addFeature(f); refreshList();
   lastSavedRouteFeat=f;
   return f;
 }
@@ -4646,7 +4523,7 @@ async function sigpacSearch(){
       if(!recFeat){out.textContent='La parcela existe pero no tiene el recinto '+rc+'. Recintos disponibles: '+j.features.map(f=>f.properties&&f.properties.recinto).filter(x=>x!=null).join(', ')+'.';return;}
       const built=await buildRecintoFeature(recFeat,pr,mu,po,pa);
       if(!built){out.textContent='No se pudo dibujar el recinto.';return;}
-      drawSource.addFeature(built.feature); pushUndo({type:'add',feat:built.feature});
+      drawSource.addFeature(built.feature);
       lastSigpacFeats=[built.feature];
       refreshList();
       view.fit(built.feature.getGeometry().getExtent(),{maxZoom:18,duration:500,padding:[100,100,320,100]});
@@ -4656,7 +4533,7 @@ async function sigpacSearch(){
     }else{
       const built=await buildParcelaFeature(j,pr,mu,po,pa);
       if(!built){out.textContent='No se pudo dibujar la parcela.';return;}
-      drawSource.addFeature(built.feature); pushUndo({type:'add',feat:built.feature});
+      drawSource.addFeature(built.feature);
       lastSigpacFeats=[built.feature];
       refreshList();
       view.fit(built.feature.getGeometry().getExtent(),{maxZoom:17,duration:500,padding:[100,100,320,100]});
@@ -4754,7 +4631,7 @@ function drawSigpacParcela(pr,mu,po,pa){
      if(!j.features||!j.features.length){toast('No se pudo dibujar la parcela');return;}
      const built=await buildParcelaFeature(j,pr,mu,po,pa);
      if(!built){toast('No se pudo dibujar la parcela');return;}
-     drawSource.addFeature(built.feature); pushUndo({type:'add',feat:built.feature});
+     drawSource.addFeature(built.feature);
      lastSigpacFeats=[built.feature];
      refreshList();
      view.fit(built.feature.getGeometry().getExtent(),{maxZoom:17,duration:500,padding:[100,100,320,100]});
@@ -4791,7 +4668,7 @@ function drawSigpacRecinto(pr,mu,po,pa,rc){
      if(!recFeat){toast('No se localizó el recinto '+rc+' en la parcela');return;}
      const built=await buildRecintoFeature(recFeat,pr,mu,po,pa);
      if(!built){toast('No se pudo dibujar el recinto');return;}
-     drawSource.addFeature(built.feature); pushUndo({type:'add',feat:built.feature});
+     drawSource.addFeature(built.feature);
      lastSigpacFeats=[built.feature];
      refreshList();
      view.fit(built.feature.getGeometry().getExtent(),{maxZoom:18,duration:500,padding:[100,100,320,100]});
@@ -4920,7 +4797,7 @@ function drawIdentifyResult(idx){
     feat.set('_meas',ol.sphere.getArea(feat.getGeometry(),{projection:P30}));
   }
   feat.set('name',identifyFeatureName(r));
-  drawSource.addFeature(feat); pushUndo({type:'add',feat:feat});
+  drawSource.addFeature(feat);
   refreshList();
   view.fit(feat.getGeometry().getExtent(),{maxZoom:18,duration:500,padding:[100,100,320,100]});
   closeIdentifyInfo();
@@ -5417,8 +5294,6 @@ function reiniciarFlujo(){
   const kmE=0.1*111.32*Math.cos(cLL[1]*Math.PI/180), kmN=0.1*110.57;
   flujoPxKmX=Math.abs(pE[0]-p0[0])/(kmE||1);
   flujoPxKmY=Math.abs(pN[1]-p0[1])/(kmN||1);
-  const prefiereQuieto=window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  if(prefiereQuieto) return;
   const w=flujoCanvas.width, h=flujoCanvas.height;
   const n=Math.max(220,Math.min(1600,Math.round(w*h/2200)));
   flujoParts=[];
@@ -5513,524 +5388,6 @@ document.getElementById('chkVientoDatos').addEventListener('change',pintarViento
 document.getElementById('chkVientoAnim').addEventListener('change',actualizarFlujo);
 document.getElementById('vientoDensidad').addEventListener('change',()=>{ if(mallaViento) cargarVientoRV(); });
 
-/* =====================================================================
-   ============ PUNTOS DE CALOR E INCENDIOS ACTIVOS ====================
-   Portado del simulador_incendiosV21.html (Leaflet) a OpenLayers.
-   Tres piezas: puntos de calor NASA (FIRMS vía GIBS) como raster WMS
-   apilados por día; focos EFFIS como puntos vectoriales pinchables
-   coloreados por antigüedad; y unión de esos focos en polígonos con
-   turf.js, con exportación a KMZ. */
-(function(){
-
-const EFFIS_WFS = 'https://maps.effis.emergency.copernicus.eu/gwis';
-const GIBS_WMS  = 'https://gibs.earthdata.nasa.gov/wms/epsg3857/best/wms.cgi';
-const MAX_FOCOS_DIBUJADOS = 1500;
-const MAX_FOCOS_LISTADOS  = 50;
-const CAPAS_CALOR = {
-  viirs: ['VIIRS_NOAA20_Thermal_Anomalies_375m_All',
-          'VIIRS_SNPP_Thermal_Anomalies_375m_All',
-          'VIIRS_NOAA21_Thermal_Anomalies_375m_All'],
-  modis: ['MODIS_Terra_Thermal_Anomalies_All',
-          'MODIS_Aqua_Thermal_Anomalies_All']
-};
-
-/* ---- Capas ---- */
-// Mancha EFFIS: capa raster (WMS) que muestra las áreas con actividad reciente.
-// La vista de RangerViewer va en EPSG:25830, pero declaramos la proyección de la fuente
-// como 3857 para que OL reproyecte correctamente (EFFIS acepta ambas, GIBS solo 3857).
-const capaWmsEFFIS = new ol.layer.Tile({
-  visible:false, zIndex:305, opacity:0.85,
-  source:new ol.source.TileWMS({
-    url: EFFIS_WFS + '?',
-    params:{LAYERS:'all.hs.week', FORMAT:'image/png', TRANSPARENT:true, VERSION:'1.1.1'},
-    projection: 'EPSG:3857',
-    attributions:'Focos activos &copy; EFFIS / Copernicus EMS'
-  })
-});
-map.addLayer(capaWmsEFFIS);
-
-// Focos EFFIS: capa vectorial con los puntos pinchables.
-const focosSrc = new ol.source.Vector();
-const focosVec = new ol.layer.Vector({
-  source:focosSrc, zIndex:460, visible:true,
-  style: (feat) => estiloFoco(feat)
-});
-map.addLayer(focosVec);
-
-// Auto-clustering: mancha translúcida bajo grupos densos de focos (estilo Google Maps).
-const autoPoliSrc = new ol.source.Vector();
-const autoPoliVec = new ol.layer.Vector({
-  source:autoPoliSrc, zIndex:454, visible:true,
-  style: (feat) => new ol.style.Style({
-    stroke: new ol.style.Stroke({ color:'#d7263d', width:2.5, lineDash:[8,5] }),
-    fill:   new ol.style.Fill({ color:'rgba(215,38,61,0.22)' })
-  })
-});
-map.addLayer(autoPoliVec);
-
-/* ---- Estilo de los focos ---- */
-function colorFoco(horas){
-  if(horas < 6)  return '#D7263D';  // rojo intenso
-  if(horas < 24) return '#F2994A';  // naranja
-  if(horas < 72) return '#F2C94C';  // amarillo
-  return '#2E7D32';                  // verde
-}
-function textoAntiguedad(horas){
-  if(horas < 1) return 'hace menos de 1 h';
-  if(horas < 48) return `hace ${Math.round(horas)} h`;
-  return `hace ${Math.round(horas/24)} días`;
-}
-
-/* Parpadeo global: un intervalo actualiza `focoBlinkOn` y fuerza el redibujado
-   de la capa de focos, de forma que estiloFoco alterna dos estados visuales
-   para los focos < 24 h. */
-let focoBlinkOn = true;
-let focoBlinkTimer = null;
-function arrancarParpadeoFocos(){
-  if(focoBlinkTimer) return;
-  focoBlinkTimer = setInterval(()=>{
-    focoBlinkOn = !focoBlinkOn;
-    if(focosVec) focosVec.changed();
-  }, 550);
-}
-function pararParpadeoFocos(){
-  if(!focoBlinkTimer) return;
-  clearInterval(focoBlinkTimer); focoBlinkTimer = null;
-  focoBlinkOn = true;
-  if(focosVec) focosVec.changed();
-}
-
-function estiloFoco(feat){
-  const horas = feat.get('horas') || 0;
-  const color = colorFoco(horas);
-  const parpadea = horas < 24;
-
-  // Tamaños (radio = mitad del lado del cuadrado)
-  //   <6 h  → cuadrado grande
-  //   6-24 h, 1-3 d, >3 d → cuadrado del tamaño del punto
-  const rBase = horas < 6 ? 11 : 6;
-
-  // Estado "apagado" del parpadeo: bajamos opacidad y encogemos levemente
-  const alpha = parpadea && !focoBlinkOn ? 0.25 : 1;
-  const radio = parpadea && !focoBlinkOn ? rBase * 0.75 : rBase;
-
-  const est = [
-    new ol.style.Style({
-      image: new ol.style.RegularShape({
-        points: 4,
-        radius: radio,
-        angle: 0,                          // cuadrado (no rombo)
-        fill: new ol.style.Fill({ color: hexToRgba(color, alpha) }),
-        stroke: new ol.style.Stroke({ color: '#fff', width: 1.4 })
-      })
-    })
-  ];
-
-  // Halo suave para los <24 h, resalta la urgencia
-  if(parpadea && focoBlinkOn){
-    est.unshift(new ol.style.Style({
-      image: new ol.style.RegularShape({
-        points: 4,
-        radius: horas < 6 ? 18 : 11,
-        angle: 0,
-        fill: new ol.style.Fill({ color: hexToRgba(color, 0.28) })
-      })
-    }));
-  }
-  return est;
-}
-
-/* ---- Puntos de calor NASA (raster GIBS) ---- */
-let capasCalorPorDia = [];  // [{fecha:'YYYY-MM-DD', capas:[ol.layer.Tile,…], opBase:0.8}]
-
-function fechaISO(d){
-  return `${d.getUTCFullYear()}-${String(d.getUTCMonth()+1).padStart(2,'0')}-${String(d.getUTCDate()).padStart(2,'0')}`;
-}
-
-function mostrarPuntosCalor(){
-  const est = document.getElementById('calorEstado');
-  const dias = parseInt(document.getElementById('calorDias').value,10) || 3;
-  const sensor = document.getElementById('calorSensor').value;
-  const capas = sensor === 'ambos' ? [...CAPAS_CALOR.viirs, ...CAPAS_CALOR.modis]
-              : sensor === 'modis' ? CAPAS_CALOR.modis
-              : CAPAS_CALOR.viirs;
-
-  quitarCapasCalor();
-
-  const hoy = new Date();
-  for(let d=0; d<dias; d++){
-    const fecha = new Date(hoy.getTime() - d*86400000);
-    const time  = fechaISO(fecha);
-    const opBase = Math.max(0.35, 1 - d*0.18);
-    const capasDia = [];
-    capas.forEach(nombre=>{
-      const layer = new ol.layer.Tile({
-        opacity: opBase, zIndex: 310,
-        source: new ol.source.TileWMS({
-          url: GIBS_WMS + '?',
-          params: {LAYERS:nombre, FORMAT:'image/png', TRANSPARENT:true, VERSION:'1.1.1', TIME:time},
-          projection: 'EPSG:3857',   // GIBS /epsg3857/ solo sirve 3857; la vista está en 25830.
-          attributions:'Puntos de calor &copy; NASA FIRMS / GIBS'
-        })
-      });
-      layer.set('_opBase', opBase);
-      map.addLayer(layer);
-      capasDia.push(layer);
-    });
-    capasCalorPorDia[d] = { fecha:time, capas:capasDia };
-  }
-  document.getElementById('chkCapaCalor').checked = true;
-  document.getElementById('btnOcultarCalor').disabled = false;
-  aplicarVisCapaCalor();
-
-  const desde = fechaISO(new Date(hoy.getTime() - (dias-1)*86400000));
-  est.innerHTML = `<span class="tag-estado">activa</span> Puntos de calor ` +
-    (sensor === 'ambos' ? 'VIIRS + MODIS' : sensor === 'modis' ? 'MODIS' : 'VIIRS') +
-    ` de la NASA, del ${desde} a hoy. Se ven en cuanto cargan las teselas.`;
-}
-function quitarCapasCalor(){
-  capasCalorPorDia.forEach(d=>{ if(d) d.capas.forEach(l=> map.removeLayer(l)); });
-  capasCalorPorDia = [];
-}
-function ocultarPuntosCalor(){
-  quitarCapasCalor();
-  document.getElementById('chkCapaCalor').checked = false;
-  document.getElementById('btnOcultarCalor').disabled = true;
-  document.getElementById('calorEstado').innerHTML = 'Puntos de calor ocultos.';
-}
-function aplicarVisCapaCalor(){
-  const v = document.getElementById('chkCapaCalor').checked;
-  capasCalorPorDia.forEach(d=>{ if(d) d.capas.forEach(l=> l.setVisible(v)); });
-}
-
-/* ---- Focos EFFIS (vector, WFS GeoJSON) ---- */
-let focosCargados = [];
-let peticionFocos = null;
-
-function nombreCapaFocos(){
-  const periodo = document.getElementById('focosPeriodo').value;
-  const sensor  = document.getElementById('focosSensor').value;
-  return `${sensor}.hs.${periodo}`;
-}
-function fechaFoco(acq){
-  if(!acq) return null;
-  const d = new Date(String(acq).trim().replace(' ','T') + 'Z');
-  return isNaN(d) ? null : d;
-}
-
-async function buscarFocos(silencioso){
-  const est = document.getElementById('focosEstado');
-  const ext3857 = map.getView().calculateExtent(map.getSize());
-  const ext4326 = ol.proj.transformExtent(ext3857, map.getView().getProjection(), 'EPSG:4326');
-  const [W, S, E, N] = ext4326;
-  const anchoGrados = Math.abs(E - W), altoGrados = Math.abs(N - S);
-  if(anchoGrados > 25 || altoGrados > 25){
-    est.innerHTML = '<span class="tag-estado pendiente">encuadre muy grande</span> ' +
-      'Acércate un poco (a nivel de provincia o comarca) para consultar los focos.';
-    return;
-  }
-
-  if(peticionFocos) peticionFocos.abort();
-  peticionFocos = new AbortController();
-  const control = peticionFocos;
-  const limite = setTimeout(()=>{ control.agotado = true; control.abort(); }, 90000);
-  if(!silencioso) est.innerHTML = '<span class="tag-estado pendiente">consultando</span> ' +
-    'El servicio de EFFIS puede tardar hasta un minuto en responder…';
-
-  // WFS 1.1.0: bbox en orden lat,lon con CRS declarado para que el GeoJSON salga en lon,lat.
-  const bbox = [S, W, N, E].map(v=>v.toFixed(4)).join(',') + ',EPSG:4326';
-  const url = EFFIS_WFS + '?service=WFS&version=1.1.0&request=GetFeature' +
-    '&typename=ms:' + encodeURIComponent(nombreCapaFocos()) +
-    '&outputformat=' + encodeURIComponent('application/json; subtype=geojson') +
-    '&srsname=EPSG:4326&bbox=' + encodeURIComponent(bbox);
-
-  try{
-    const resp = await fetch(url, {signal:peticionFocos.signal});
-    if(!resp.ok) throw new Error('HTTP ' + resp.status);
-    const datos = await resp.json();
-    const ahora = Date.now();
-
-    focosCargados = (datos.features || []).map(f=>{
-      const c = f.geometry && f.geometry.coordinates;
-      if(!c) return null;
-      const fecha = fechaFoco(f.properties && f.properties.acq_at);
-      return {
-        lat:c[1], lon:c[0], fecha,
-        horas: fecha ? (ahora - fecha.getTime())/3600000 : 9999
-      };
-    }).filter(Boolean).sort((a,b)=> a.horas - b.horas);
-
-    pintarFocos();
-    const hora = new Date().toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit'});
-    if(!focosCargados.length){
-      est.innerHTML = '<span class="tag-estado">sin focos</span> No hay detecciones en este ' +
-        `encuadre para el periodo elegido (comprobado a las ${hora}).`;
-    }else{
-      const recientes = focosCargados.filter(f=> f.horas < 24).length;
-      const recorte = focosCargados.length > MAX_FOCOS_DIBUJADOS
-        ? ` Se dibujan los ${MAX_FOCOS_DIBUJADOS} más recientes.` : '';
-      est.innerHTML = `<span class="tag-estado">${focosCargados.length} focos</span> ` +
-        `${recientes} en las últimas 24 h. Actualizado a las ${hora}.${recorte}`;
-    }
-  }catch(err){
-    if(err.name === 'AbortError'){
-      if(!control.agotado) return;
-      est.innerHTML = '<span class="tag-estado error">sin respuesta</span> EFFIS no ha contestado ' +
-        'en 90 segundos. Prueba con un periodo más corto o vuelve a pulsar «Buscar».';
-      return;
-    }
-    console.error(err);
-    est.innerHTML = '<span class="tag-estado error">sin datos</span> No se pudo consultar EFFIS ' +
-      `(${err.message}). El servicio se satura con frecuencia: prueba otra vez en unos segundos.`;
-  }finally{
-    clearTimeout(limite);
-    if(peticionFocos === control) peticionFocos = null;
-  }
-}
-
-function pintarFocos(){
-  focosSrc.clear();
-  const lista = document.getElementById('listaFocos');
-  lista.innerHTML = '';
-
-  focosCargados.slice(0, MAX_FOCOS_DIBUJADOS).forEach(f=>{
-    const c3857 = ol.proj.transform([f.lon, f.lat], 'EPSG:4326', map.getView().getProjection());
-    const feat = new ol.Feature({ geometry: new ol.geom.Point(c3857) });
-    feat.set('horas', f.horas);
-    feat.set('_foco', f);
-    focosSrc.addFeature(feat);
-    f.feature = feat;
-  });
-
-  // Arranca (o para) el parpadeo según haya focos <24 h dibujados
-  const hayRecientes = focosCargados.slice(0, MAX_FOCOS_DIBUJADOS).some(f=> f.horas < 24);
-  if(hayRecientes) arrancarParpadeoFocos(); else pararParpadeoFocos();
-
-  // Auto-agrupación por proximidad: dibuja una mancha translúcida bajo los clusters
-  autoClusterFocos();
-
-  focosCargados.slice(0, MAX_FOCOS_LISTADOS).forEach(f=>{
-    const item = document.createElement('div');
-    item.className = 'foco-item';
-    item.innerHTML =
-      `<span class="punto" style="background:${colorFoco(f.horas)};"></span>` +
-      `<span class="txt"><b>${f.lat.toFixed(4)}, ${f.lon.toFixed(4)}</b>` +
-      `<span>${f.fecha ? f.fecha.toLocaleString('es-ES') : 'sin hora'} · ${textoAntiguedad(f.horas)}</span></span>`;
-    const btn = document.createElement('button');
-    btn.textContent = 'Ir';
-    btn.title = 'Centrar el mapa en este foco';
-    btn.addEventListener('click', (e)=>{ e.stopPropagation(); irAFoco(f); });
-    item.appendChild(btn);
-    item.addEventListener('click', ()=> irAFoco(f, true));
-    lista.appendChild(item);
-  });
-}
-
-function irAFoco(f, abrirPop){
-  const c3857 = ol.proj.transform([f.lon, f.lat], 'EPSG:4326', map.getView().getProjection());
-  map.getView().animate({center:c3857, zoom:Math.max(map.getView().getZoom() || 10, 13), duration:400});
-  if(abrirPop) setTimeout(()=> abrirPopupFoco(f, c3857), 450);
-}
-
-/* ---- Auto-agrupación de focos: enlace simple + envolvente cóncava.
-   Encadena focos que estén a ≤ distKm de al menos un vecino (single-linkage),
-   luego filtra por tamaño mínimo. El polígono usa los focos del borde como
-   vértices y engloba los del interior. */
-function autoClusterFocos(){
-  autoPoliSrc.clear();
-  const chk = document.getElementById('chkAutoCluster');
-  if(!chk || !chk.checked) return;
-  if(typeof turf === 'undefined') return;
-  const focos = focosCargados.slice(0, MAX_FOCOS_DIBUJADOS);
-  if(focos.length < 2) return;
-  const minMiembros = Math.max(2, parseInt(document.getElementById('autoClusterMin').value,10) || 4);
-  const distKm = Math.max(0.1, (parseFloat(document.getElementById('autoClusterRad').value) || 800) / 1000);
-  const proj = map.getView().getProjection();
-  try{
-    const pts = focos.map(f=> turf.point([f.lon, f.lat]));
-
-    // 1) Single-linkage: union-find sobre pares dentro de distKm.
-    const n = pts.length;
-    const parent = new Array(n); for(let i=0;i<n;i++) parent[i]=i;
-    const find = i => { while(parent[i]!==i){ parent[i]=parent[parent[i]]; i=parent[i]; } return i; };
-    const union = (a,b)=>{ const ra=find(a), rb=find(b); if(ra!==rb) parent[ra]=rb; };
-    for(let i=0;i<n;i++){
-      for(let j=i+1;j<n;j++){
-        const d = turf.distance(pts[i], pts[j], {units:'kilometers'});
-        if(d <= distKm) union(i,j);
-      }
-    }
-
-    // 2) Agrupa por raíz. Los grupos que llegan a minMiembros son "grandes";
-    //    el resto quedan como grupos pequeños que intentaremos absorber.
-    const gruposMap = new Map();
-    for(let i=0;i<n;i++){
-      const r = find(i);
-      if(!gruposMap.has(r)) gruposMap.set(r, []);
-      gruposMap.get(r).push(pts[i]);
-    }
-    const gruposGrandes = [];
-    const gruposPequenos = [];
-    gruposMap.forEach(puntos=>{
-      if(puntos.length >= minMiembros) gruposGrandes.push({puntos: puntos.slice(), semilla: puntos.slice()});
-      else gruposPequenos.push({puntos: puntos.slice(), absorbido:false});
-    });
-
-    // 3) Absorbe cada grupo pequeño al grupo grande más cercano si está a ≤ absorbKm.
-    const absorbKm = distKm * 3;
-    gruposPequenos.forEach(sg=>{
-      let best = -1, bestD = Infinity;
-      for(const o of sg.puntos){
-        const oc = o.geometry.coordinates;
-        for(let g=0; g<gruposGrandes.length; g++){
-          for(const p of gruposGrandes[g].semilla){
-            const d = turf.distance(oc, p.geometry.coordinates, {units:'kilometers'});
-            if(d < bestD){ bestD = d; best = g; }
-          }
-        }
-      }
-      if(best >= 0 && bestD <= absorbKm){
-        gruposGrandes[best].puntos.push(...sg.puntos);
-        sg.absorbido = true;
-      }
-    });
-
-    // 4) Lista final: grandes (con puntos absorbidos) + pequeños no absorbidos.
-    //    Todos generan polígono — así no queda ningún foco suelto.
-    const finales = [];
-    gruposGrandes.forEach(g=> finales.push(g.puntos));
-    gruposPequenos.forEach(sg=>{ if(!sg.absorbido) finales.push(sg.puntos); });
-
-    // 5) Polígono por grupo. Cóncava si hay puntos suficientes; si no o falla,
-    //    fallback a unión de buffers pequeños alrededor de cada punto.
-    const maxEdge = Math.max(distKm * 1.5, absorbKm * 1.1);
-    const bufR = distKm * 0.6;
-    finales.forEach(puntos=>{
-      let poly = null;
-      if(puntos.length >= 3){
-        const fc = turf.featureCollection(puntos);
-        try{ poly = turf.concave(fc, {maxEdge, units:'kilometers'}); }catch(e){ poly = null; }
-        if(!poly){ try{ poly = turf.convex(fc); }catch(e){ poly = null; } }
-      }
-      if(!poly){
-        try{
-          const bufs = puntos.map(p=> turf.circle(p.geometry.coordinates, bufR, {steps:16, units:'kilometers'}));
-          if(bufs.length === 1) poly = bufs[0];
-          else { const u = unirPorPares(bufs); poly = u[0]; }
-        }catch(e){}
-      }
-      if(!poly) return;
-
-      anillosDeGeometria(poly.geometry).forEach(coords=>{
-        const ring = coords[0].map(([lo,la])=> ol.proj.transform([lo,la],'EPSG:4326', proj));
-        const feat = new ol.Feature({ geometry: new ol.geom.Polygon([ring]) });
-        feat.set('_focos', puntos.length);
-        try{ feat.set('_areaHa', turf.area(turf.polygon(coords))/10000); }catch(e){}
-        autoPoliSrc.addFeature(feat);
-      });
-    });
-  }catch(e){ console.error('autoClusterFocos', e); }
-}
-
-/* ---- Popup del foco (ol.Overlay) ---- */
-const focoPopEl = document.getElementById('focoPop');
-const focoOverlay = new ol.Overlay({
-  element: focoPopEl, positioning:'bottom-center', offset:[0,-10], stopEvent:true,
-  autoPan:{animation:{duration:200}, margin:60}
-});
-map.addOverlay(focoOverlay);
-let focoActivoPop = null;
-function abrirPopupFoco(f, c3857){
-  focoActivoPop = f;
-  const info = document.getElementById('focoPopInfo');
-  info.innerHTML =
-    `<b>🔥 Foco de calor</b><br>` +
-    `${f.lat.toFixed(5)}, ${f.lon.toFixed(5)}<br>` +
-    `Detectado: ${f.fecha ? f.fecha.toLocaleString('es-ES') : 'sin hora'}<br>` +
-    `<span style="color:${colorFoco(f.horas)};font-weight:700">${textoAntiguedad(f.horas)}</span>`;
-  focoOverlay.setPosition(c3857);
-  focoPopEl.style.display = 'block';
-}
-function cerrarPopupFoco(){ focoPopEl.style.display='none'; focoOverlay.setPosition(undefined); focoActivoPop = null; }
-document.getElementById('focoPopClose').onclick = cerrarPopupFoco;
-document.getElementById('focoPopUsar').onclick = ()=>{
-  if(!focoActivoPop) return;
-  const f = focoActivoPop;
-  const c30 = ol.proj.transform([f.lon, f.lat], 'EPSG:4326', P30);
-  // Crea un punto dibujado como el que la herramienta "Punto" del ranger produciría.
-  const feat = new ol.Feature({geometry: new ol.geom.Point(c30)});
-  feat.set('_kind','Point');
-  feat.set('name','Foco satélite ' + (f.fecha ? f.fecha.toLocaleString('es-ES') : ''));
-  drawSource.addFeature(feat);
-  if(typeof pushUndo === 'function') pushUndo({type:'add', feat});
-  if(typeof refreshList === 'function') refreshList();
-  toast('Foco fijado como punto');
-  cerrarPopupFoco();
-};
-
-/* ---- Detección de clics: si tocamos un foco vector, abrimos su popup. */
-map.on('singleclick', (e)=>{
-  if(activeTool) return;
-  let hit = null;
-  map.forEachFeatureAtPixel(e.pixel, (f, l)=>{ if(l === focosVec){ hit=f; return true; } }, {hitTolerance:10});
-  if(hit){
-    const foco = hit.get('_foco');
-    if(foco) abrirPopupFoco(foco, hit.getGeometry().getCoordinates());
-    e.stopPropagation();
-  }
-});
-
-/* ---- Helpers de unión geométrica (turf) — usados por el auto-cluster ---- */
-function anillosDeGeometria(geom){
-  if(!geom) return [];
-  if(geom.type === 'Polygon') return [geom.coordinates];
-  if(geom.type === 'MultiPolygon') return geom.coordinates;
-  return [];
-}
-function unirPorPares(piezas){
-  let nivel = piezas;
-  while(nivel.length > 1){
-    const siguiente = [];
-    for(let i=0; i<nivel.length; i+=2){
-      if(i+1 >= nivel.length){ siguiente.push(nivel[i]); break; }
-      let u = null;
-      try{ u = turf.union(nivel[i], nivel[i+1]); }catch(e){ u = null; }
-      siguiente.push(u || nivel[i]);
-      if(!u) siguiente.push(nivel[i+1]);
-    }
-    if(siguiente.length >= nivel.length) break;
-    nivel = siguiente;
-  }
-  return nivel;
-}
-/* ---- Cableado de eventos ---- */
-document.getElementById('bFocosMain').onclick = ()=> openSheet('sheetFocos');
-document.getElementById('moFocos').onclick    = ()=> openSheet('sheetFocos');
-
-document.getElementById('btnPuntosCalor').onclick = mostrarPuntosCalor;
-document.getElementById('btnOcultarCalor').onclick = ocultarPuntosCalor;
-document.getElementById('calorDias').addEventListener('change', ()=>{ if(capasCalorPorDia.length) mostrarPuntosCalor(); });
-document.getElementById('calorSensor').addEventListener('change', ()=>{ if(capasCalorPorDia.length) mostrarPuntosCalor(); });
-document.getElementById('chkCapaCalor').addEventListener('change', aplicarVisCapaCalor);
-
-document.getElementById('btnBuscarFocos').onclick = ()=> buscarFocos(false);
-document.getElementById('focosPeriodo').addEventListener('change', ()=>{
-  capaWmsEFFIS.getSource().updateParams({LAYERS:'all.hs.' + document.getElementById('focosPeriodo').value});
-  if(focosCargados.length) buscarFocos(true);
-});
-document.getElementById('focosSensor').addEventListener('change', ()=>{ if(focosCargados.length) buscarFocos(true); });
-document.getElementById('chkAutoCluster').addEventListener('change', autoClusterFocos);
-document.getElementById('autoClusterMin').addEventListener('change', autoClusterFocos);
-document.getElementById('autoClusterRad').addEventListener('change', autoClusterFocos);
-
-document.getElementById('chkCapaEFFIS').addEventListener('change', ()=>{
-  capaWmsEFFIS.setVisible(document.getElementById('chkCapaEFFIS').checked);
-});
-
-// Sincroniza los halos y las geometrías vectoriales al cambiar la proyección/vista (no ocurre aquí,
-// pero por seguridad si algún día se cambia): OL redibuja solo, no hace falta hacer nada más.
-
-})();
 
 /* ============================================================
    RAYOS EN TIEMPO REAL · Blitzortung.org
