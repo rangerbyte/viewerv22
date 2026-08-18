@@ -299,6 +299,14 @@
   .crosshair span{position:absolute;left:50%;top:50%;width:10px;height:10px;
     border:2px solid var(--rojo);border-radius:50%;transform:translate(-50%,-50%);background:rgba(255,255,255,.5);}
   .ol-scale-line{bottom:calc(env(safe-area-inset-bottom) + 14px);left:12px;}
+  /* Nivel de zoom, apilado justo encima de la barra de escala. Va con la misma esquina
+     que ella para que quede claro que las dos cosas hablan de la escala del mapa. */
+  #zoomInfo{position:absolute;z-index:20;left:12px;
+    bottom:calc(env(safe-area-inset-bottom) + 44px);
+    background:var(--panel);color:var(--txt);border:1px solid var(--borde);
+    border-radius:8px;padding:3px 8px;font-size:12px;font-weight:800;
+    font-variant-numeric:tabular-nums;box-shadow:var(--sombra);
+    pointer-events:none;user-select:none;}
   /* Zoom arriba a la izquierda */
   .ol-zoom{position:absolute;top:calc(env(safe-area-inset-top) + 62px);left:12px;
     background:transparent;padding:0;display:flex;flex-direction:column;gap:8px;}
@@ -436,6 +444,46 @@
   .fpb.save{flex:1;background:var(--rojo);color:#fff;border-color:var(--rojo);}
   .fpb.del{background:#fbecea;color:#b0392b;border-color:#e7b8b1;}
 
+  /* Globo ancho: se usa cuando el elemento trae tabla de atributos (shapefile) */
+  .fpop.wide{min-width:270px;max-width:320px;}
+  .fpline{display:flex;align-items:center;gap:6px;margin:6px 0;}
+  .fplab{font-size:11px;font-weight:700;color:var(--gris-tx);}
+  /* .fpop input lleva width:100%; los controles de estilo van en fila y necesitan su
+     propio tamaño, si no el selector de color se come el ancho del globo. */
+  .fpop input[type=color]{width:34px;height:28px;flex:0 0 auto;padding:0;border:none;background:none;}
+  .fpop input[type=range]{flex:1;width:auto;padding:0;border:none;accent-color:var(--rojo);}
+
+  /* Paleta de 24 colores. Un <input type="color"> abre el selector del sistema, que en
+     iPad tapa el mapa entero y ofrece millones de tonos que sobre una ortofoto no se
+     distinguen entre sí. Estos 24 sí se diferencian, y se eligen de un toque.
+     Se usa en el globo del elemento, en la hoja del shapefile y en la cabecera de cada
+     capa de la lista de elementos. */
+  .swatch{width:34px;height:28px;flex:0 0 auto;padding:0;border:1px solid var(--borde);
+    border-radius:8px;cursor:pointer;background:#e2001a;}
+  .pal{display:grid;grid-template-columns:repeat(8,1fr);gap:4px;margin:4px 0 6px;}
+  .pal button{width:100%;height:26px;border-radius:6px;border:1px solid rgba(0,0,0,.25);
+    padding:0;cursor:pointer;-webkit-appearance:none;appearance:none;}
+  .pal button.on{outline:3px solid var(--rojo);outline-offset:1px;}
+
+  /* Lista de elementos agrupada por capa (el archivo del que vino cada objeto) */
+  .capaHead{display:flex;align-items:center;gap:8px;padding:10px 8px;margin-top:8px;
+    background:var(--gris-bg);border:1px solid var(--borde);border-radius:10px;}
+  .capaHead .nom{flex:1;min-width:0;font-size:14px;font-weight:800;color:var(--txt);
+    overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .capaHead .cnt{font-size:11px;font-weight:700;color:var(--gris-tx);}
+  .capaHead button{border:none;background:var(--panel);border-radius:8px;padding:8px 9px;
+    font-size:14px;cursor:pointer;color:var(--txt);}
+  .capaHead .flecha{flex:0 0 auto;background:none;padding:4px 2px;font-size:13px;}
+  .capaBody{padding-left:6px;border-left:2px solid var(--divisor);margin-left:8px;}
+  .fpatt{max-height:170px;overflow-y:auto;-webkit-overflow-scrolling:touch;margin:4px 0 2px;}
+  .fpatt table{width:100%;border-collapse:collapse;font-size:11px;}
+  .fpatt th{text-align:left;font-weight:700;color:var(--gris-tx);white-space:nowrap;
+    padding:4px 8px 4px 0;vertical-align:top;}
+  .fpatt td{padding:4px 0;color:var(--txt);word-break:break-word;vertical-align:top;}
+  .fpatt tr+tr{border-top:1px solid var(--divisor);}
+  .fptog{background:none;border:none;font-family:inherit;font-size:11.5px;font-weight:700;
+    color:var(--rojo);cursor:pointer;padding:3px 0;width:100%;text-align:left;}
+
   .sgp-t{font-weight:800;font-size:13px;color:var(--tit);margin-bottom:3px;font-family:'Baloo 2','Montserrat',sans-serif;}
   #sigpacPop .fpinfo{font-size:11.5px;}
 
@@ -516,6 +564,9 @@
 </div>
 
 <div class="crosshair" id="cross"><span></span></div>
+
+<!-- Nivel de zoom, justo encima de la barra de escala -->
+<div id="zoomInfo" title="Nivel de zoom">Z —</div>
 
 <button id="centerBtn" title="Centrar en mi posición (requiere el GPS conectado)">🎯</button>
 <button id="locateBtn" title="Conectar / desconectar el GPS">🛰️</button>
@@ -633,10 +684,12 @@
     <input type="range" id="baseOp" min="0" max="100" step="1" value="100">
     <p class="hint" style="margin-top:2px">Deslízalo a la izquierda para difuminar el mapa base y que se vean mejor las capas WMS superpuestas (ortofoto, satélite, etc.).</p>
   </div>
+  <div class="seccion-tit" style="font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:var(--gris-tx);margin:12px 2px 6px;font-weight:800">Mapas MBTiles</div>
+  <div id="mbtList"></div>
   <button class="ghost" id="bMbtImport">📦 Importar mapa MBTiles</button>
   <input type="file" id="mbtImportFile" accept=".mbtiles,application/x-sqlite3,application/octet-stream,*/*" style="display:none">
   <p class="hint" id="mbtImportInfo" style="margin-top:4px"></p>
-  <p class="hint">Un archivo <b>.mbtiles</b> (exportado p. ej. desde QGIS) se guarda en esta tableta y aparece arriba como un mapa de fondo más; puedes eliminarlo con 🗑️.</p>
+  <p class="hint">Un archivo <b>.mbtiles</b> (exportado p. ej. desde QGIS) se guarda en esta tableta. Puedes tener <b>varios encendidos a la vez</b>: se dibujan sobre el mapa de fondo, en el orden en que los enciendes. Con 🔍 la vista va hasta el mapa y con 🗑️ se borra de la tableta.</p>
 
   <div class="seccion-tit" style="font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:var(--gris-tx);margin:12px 2px 6px;font-weight:800">Uso sin conexión</div>
   <button class="ghost" id="bSaveZone">📥 Guardar esta zona sin conexión</button>
@@ -745,6 +798,10 @@ service cloud.firestore {
   </div>
   <label class="chip wide"><input type="checkbox" id="exOnlySel"> Solo los elementos marcados en la lista</label>
   <div class="hint" id="expCount" style="margin-top:6px"></div>
+  <!-- El nombre se pide aquí, en la propia hoja, y no con prompt(): en iPad un diálogo
+       nativo entre el toque y la creación del archivo agota el "gesto del usuario" y
+       Safari cancela en silencio tanto la descarga como la hoja de compartir. -->
+  <div class="field"><input type="text" id="expName" placeholder="Nombre del archivo (opcional)"></div>
   <button class="primary" id="expKmz">⬇️ KMZ (uno por tipo)</button>
   <p class="hint" style="margin:8px 0 4px">Otros formatos:</p>
   <div class="exptypes">
@@ -757,10 +814,33 @@ service cloud.firestore {
 <!-- Hoja: importar archivo -->
 <div class="sheet" id="sheetImport">
   <h3>Importar archivo <span class="x" data-close>✕</span></h3>
-  <p class="hint">Carga un archivo <b>KMZ</b>, <b>KML</b>, <b>GPX</b> o <b>GeoJSON</b>. Sus puntos, líneas y polígonos se añadirán al mapa y a la lista de elementos.</p>
+  <p class="hint">Carga un archivo <b>KMZ</b>, <b>KML</b>, <b>GPX</b>, <b>GeoJSON</b> o un <b>shapefile comprimido en ZIP</b> (.shp + .dbf + .prj dentro del zip). Sus puntos, líneas y polígonos se añadirán al mapa y a la lista de elementos, donde podrás cambiarles el nombre y el color.</p>
   <button class="primary" id="impPick">📂 Elegir archivo…</button>
-  <input type="file" id="impFile" accept=".kmz,.kml,.gpx,.geojson,.json,application/vnd.google-earth.kmz,application/vnd.google-earth.kml+xml,application/gpx+xml,application/geo+json,application/json,*/*" style="display:none">
+  <input type="file" id="impFile" accept=".kmz,.kml,.gpx,.geojson,.json,.zip,application/vnd.google-earth.kmz,application/vnd.google-earth.kml+xml,application/gpx+xml,application/geo+json,application/json,application/zip,*/*" style="display:none">
   <div class="hint" id="impInfo" style="margin-top:10px"></div>
+</div>
+
+<!-- Hoja: opciones de importación de un shapefile ZIP.
+     Un shapefile puede traer cientos de elementos y una tabla de atributos: aquí se
+     elige de una vez qué campo se usa como texto (etiqueta) y con qué color entran,
+     en lugar de tener que tocar uno a uno. Después, cada elemento sigue siendo
+     editable por separado desde el globo del mapa. -->
+<div class="sheet" id="sheetShp">
+  <h3>Shapefile <span class="x" data-close>✕</span></h3>
+  <div class="hint" id="shpInfo"></div>
+  <div class="field">Texto
+    <select id="shpField" style="flex:1;padding:10px;border:1px solid var(--borde);border-radius:8px;font-size:15px;font-family:inherit;background:var(--panel);color:var(--txt)"></select>
+  </div>
+  <div class="field">Color
+    <span class="hint" style="margin:0">Se aplica a toda la capa; luego puedes cambiarlo por capa o uno a uno.</span>
+  </div>
+  <input type="hidden" id="shpColor" value="#9c27b0">
+  <div class="pal" id="shpColorPal"></div>
+  <div class="field">Símbolo
+    <input type="text" id="shpGlyph" value="📍" maxlength="4" style="flex:0 0 70px;text-align:center;font-size:20px">
+    <span class="hint" style="margin:0">Solo para capas de puntos.</span>
+  </div>
+  <button class="primary" id="shpAdd">➕ Añadir al mapa</button>
 </div>
 
 <!-- Hoja: ir a coordenadas -->
@@ -1004,10 +1084,36 @@ service cloud.firestore {
 <div id="featPopup" class="fpop">
   <input id="fpName" type="text" placeholder="Nombre del elemento">
   <div class="fpinfo" id="fpInfo"></div>
-  <div class="fprow" id="fpColorRow" style="display:none;align-items:center;gap:8px;margin:2px 0 8px">
-    <label style="font-size:12px;font-weight:700;color:var(--gris-tx)">Color</label>
-    <input type="color" id="fpColor" style="width:40px;height:32px;border:none;background:none;padding:0;cursor:pointer">
+
+  <!-- Tabla de atributos del archivo (el .dbf de un shapefile, o los datos que traiga
+       un KML/GeoJSON). Sólo se muestra si el elemento trae datos; plegada por defecto
+       para que el globo no tape el mapa. -->
+  <div id="fpAttrBox" style="display:none">
+    <button type="button" class="fptog" id="fpAttrTog">▸ Datos del archivo</button>
+    <div class="fpatt" id="fpAttr" style="display:none"></div>
   </div>
+
+  <!-- El color se elige de la paleta de 24: el botón cuadrado muestra el actual y al
+       tocarlo despliega la rejilla. El valor vive en un input oculto para que el resto
+       del código lo lea igual que cuando era un <input type="color">. -->
+  <div class="fpline" id="fpColorRow" style="display:none">
+    <span class="fplab" id="fpColorLab" style="flex:0 0 56px">Contorno</span>
+    <button type="button" class="swatch" id="fpColorSw" title="Color del contorno"></button>
+    <input type="hidden" id="fpColor">
+    <input type="range" id="fpWidth" min="1" max="12" step="1" title="Grosor del contorno">
+  </div>
+  <div class="pal" id="fpColorPal" style="display:none"></div>
+  <div class="fpline" id="fpFillRow" style="display:none">
+    <span class="fplab" style="flex:0 0 56px">Fondo</span>
+    <button type="button" class="swatch" id="fpFillSw" title="Color de relleno"></button>
+    <input type="hidden" id="fpFill">
+    <!-- step=1: si redondease a saltos de 5, al abrir un polígono con el 22 % de serie
+         el control mostraría 20 % y guardarlo sin tocar nada le cambiaría el relleno. -->
+    <input type="range" id="fpAlpha" min="0" max="100" step="1" title="Opacidad del relleno (0 % = sin relleno)">
+    <span class="fplab" id="fpAlphaVal" style="flex:0 0 32px;text-align:right">22%</span>
+  </div>
+  <div class="pal" id="fpFillPal" style="display:none"></div>
+
   <div class="fprow">
     <button id="fpSave" class="fpb save">Guardar</button>
     <button id="fpGo" class="fpb" title="Centrar">🔍</button>
@@ -1400,6 +1506,19 @@ const map=new ol.Map({
     .extend([new ol.control.ScaleLine({units:'metric'})])
 });
 
+/* Nivel de zoom en pantalla. Se engancha a change:resolution y no a moveend para que
+   siga al dedo durante el pellizco, no solo al soltar. El zoom es fraccionario, así que
+   se muestra con un decimal salvo que caiga en un nivel redondo. */
+const zoomInfoEl=document.getElementById('zoomInfo');
+function pintaZoomInfo(){
+  const z=view.getZoom();
+  if(z==null) return;
+  const r=Math.round(z*10)/10;
+  zoomInfoEl.textContent='Z '+(Number.isInteger(r)?r:String(r).replace('.',','));
+}
+view.on('change:resolution',pintaZoomInfo);
+pintaZoomInfo();
+
 /* ===================== Recordar la vista y el mapa base entre recargas =====================
    Para que al refrescar la página no parezca que se ha perdido el trabajo: se guarda
    dónde estabas mirando (centro, zoom, rotación) y qué mapa de fondo tenías puesto, y
@@ -1584,9 +1703,88 @@ const baseList=document.getElementById('baseList');
    (se construyen la primera vez que se seleccionan, para no cargar todos a la vez). */
 let mbtMetaList=[];
 const mbtLayers={};
+/* Los MBTiles ya no son un mapa de fondo más (que sería excluyente): se encienden y se
+   apagan por separado en su propia lista, para poder tener varios a la vez. */
+const mbtList=document.getElementById('mbtList');
+const MBT_ON_KEY='rvv21_mbtActivos';
+let mbtActivos=[];
+try{ const v=JSON.parse(localStorage.getItem(MBT_ON_KEY)||'[]'); if(Array.isArray(v)) mbtActivos=v; }catch(e){}
+function guardarMbtActivos(){ try{ localStorage.setItem(MBT_ON_KEY,JSON.stringify(mbtActivos)); }catch(e){} }
+/* Enciende o apaga un MBTiles. La capa se construye la primera vez que se enciende, para
+   no tener que abrir todas las bases de datos SQLite al arrancar. */
+async function mostrarMbt(id,on){
+  if(on){
+    let entry=mbtLayers[id];
+    if(!entry){
+      toast('Cargando mapa MBTiles…');
+      try{ entry=await ensureMbtLayer(id); }
+      catch(e){ console.error(e); toast('No se pudo cargar el mapa MBTiles'); return null; }
+    }
+    entry.layer.setVisible(true);
+    if(typeof aplicarBaseOpacidad==='function') aplicarBaseOpacidad();
+    if(mbtActivos.indexOf(id)<0) mbtActivos.push(id);
+    guardarMbtActivos(); renderMbtList();
+    return entry;
+  }
+  const entry=mbtLayers[id];
+  if(entry) entry.layer.setVisible(false);
+  mbtActivos=mbtActivos.filter(x=>x!==id);
+  guardarMbtActivos(); renderMbtList();
+  return entry;
+}
+function renderMbtList(){
+  mbtList.textContent='';
+  if(!mbtMetaList.length){
+    const p=document.createElement('p'); p.className='hint';
+    p.textContent='Todavía no has importado ningún mapa MBTiles.';
+    mbtList.appendChild(p); return;
+  }
+  mbtMetaList.forEach(m=>{
+    const encendido=mbtActivos.indexOf(m.id)>=0;
+    const fila=document.createElement('div');
+    fila.className='baseopt'+(encendido?' active':'');
+    fila.style.justifyContent='space-between';
+
+    const izq=document.createElement('div');
+    izq.style.cssText='display:flex;align-items:center;gap:10px;min-width:0;flex:1;cursor:pointer';
+    const chk=document.createElement('input');
+    chk.type='checkbox'; chk.checked=encendido;
+    chk.style.cssText='width:20px;height:20px;accent-color:var(--rojo);flex:0 0 auto;pointer-events:none';
+    const ico=document.createElement('div');
+    ico.className='dot';
+    ico.style.cssText='display:flex;align-items:center;justify-content:center;font-size:18px;background:#f0f4f0';
+    ico.textContent='📦';
+    const nom=document.createElement('span');
+    // textContent: el nombre sale de los metadatos del archivo, que son de terceros
+    nom.style.cssText='overflow:hidden;text-overflow:ellipsis;white-space:nowrap';
+    nom.textContent=m.name;
+    izq.appendChild(chk); izq.appendChild(ico); izq.appendChild(nom);
+    izq.onclick=()=>mostrarMbt(m.id,!encendido);
+    fila.appendChild(izq);
+
+    const der=document.createElement('span');
+    der.style.whiteSpace='nowrap';
+    const boton=(txt,titulo)=>{
+      const b=document.createElement('button');
+      b.textContent=txt; b.title=titulo;
+      b.style.cssText='flex:0 0 auto;border:1px solid var(--borde);background:var(--gris-bg);border-radius:8px;padding:6px 9px;font-size:13px;cursor:pointer;margin-left:6px';
+      der.appendChild(b); return b;
+    };
+    boton('🔍','Llevar la vista hasta este mapa').onclick=async e=>{
+      e.stopPropagation();
+      const entry=await mostrarMbt(m.id,true);      // encenderlo si estaba apagado
+      if(entry){ irAlMbtiles(entry.layer,false); closeSheets(); }
+    };
+    boton('🗑️','Eliminar este mapa MBTiles del dispositivo').onclick=e=>{
+      e.stopPropagation(); deleteMbtBase(m.id);
+    };
+    fila.appendChild(der);
+    mbtList.appendChild(fila);
+  });
+}
 function renderBaseList(){
   baseList.innerHTML='';
-  const all=[...baseDefs, ...mbtMetaList.map(m=>({id:'mbt_'+m.id, name:m.name, emoji:'📦', mbt:true, mbtId:m.id}))];
+  const all=baseDefs;
   all.forEach(b=>{
     const div=document.createElement('div');
     div.className='baseopt'+(b.id===currentBase?' active':'');
@@ -1598,17 +1796,11 @@ function renderBaseList(){
       '<span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+safeName+'</span>';
     left.onclick=()=>setBase(b.id);
     div.appendChild(left);
-    if(b.mbt){
-      const del=document.createElement('button');
-      del.textContent='🗑️'; del.title='Eliminar este mapa MBTiles del dispositivo';
-      del.style.cssText='flex:0 0 auto;border:1px solid var(--borde);background:var(--gris-bg);border-radius:8px;padding:6px 9px;font-size:13px;cursor:pointer;margin-left:8px';
-      del.onclick=(e)=>{ e.stopPropagation(); deleteMbtBase(b.mbtId); };
-      div.appendChild(del);
-    }
     baseList.appendChild(div);
   });
 }
 renderBaseList();
+renderMbtList();
 
 /* OpenFreeMap: carga perezosa del estilo Mapbox/OpenMapTiles.
    El primer setBase('openfreemap') pide el JSON del estilo (Liberty) y lo
@@ -1649,32 +1841,26 @@ async function setBase(id){
       return;
     }
     Object.values(baseLayers).forEach(l=>l.setVisible(l===baseLayers.openfreemap));
-    Object.values(mbtLayers).forEach(en=>en.layer.setVisible(false));
     currentBase=id;
     renderBaseList();
     if(typeof aplicarBaseOpacidad==='function') aplicarBaseOpacidad();
     toast('OpenFreeMap');
     return;
   }
+  /* Un id "mbt_…" ya no es un mapa de fondo. Se acepta por compatibilidad con las
+     sesiones guardadas antes de que los MBTiles pasaran a encenderse por separado. */
   if(String(id).indexOf('mbt_')===0){
-    const mbtId=id.slice(4);
-    let entry=mbtLayers[mbtId];
-    if(!entry){
-      toast('Cargando mapa MBTiles…');
-      try{ entry=await ensureMbtLayer(mbtId); }
-      catch(e){ console.error(e); toast('No se pudo cargar el mapa MBTiles'); return; }
+    const entry=await mostrarMbt(id.slice(4),true);
+    if(entry){
+      // Un MBTiles solo cubre la zona de la que se exportó. Si la vista está en otro
+      // sitio no se vería nada y parecería que el mapa no ha cargado.
+      irAlMbtiles(entry.layer,true);
+      toast(entry.meta.name);
     }
-    Object.values(baseLayers).forEach(l=>l.setVisible(false));
-    Object.values(mbtLayers).forEach(en=>en.layer.setVisible(en===entry));
-    currentBase=id;
-    renderBaseList();
-    if(typeof aplicarBaseOpacidad==='function') aplicarBaseOpacidad();
-    toast(entry.meta.name);
     return;
   }
   currentBase=id;
   Object.keys(baseLayers).forEach(k=>baseLayers[k].setVisible(k===id));
-  Object.values(mbtLayers).forEach(en=>en.layer.setVisible(false));
   renderBaseList();
   if(typeof aplicarBaseOpacidad==='function') aplicarBaseOpacidad();
   toast(baseDefs.find(b=>b.id===id).name);
@@ -1693,6 +1879,10 @@ function activeBaseLayer(){
 }
 function aplicarBaseOpacidad(){
   const capa=activeBaseLayer(); if(capa) capa.setOpacity(baseOpacidad);
+  /* Los MBTiles encendidos tapan el mapa de fondo, así que difuminar solo el de debajo
+     no serviría de nada: la transparencia se les aplica también, que es lo que hacía
+     antes, cuando un MBTiles era el propio mapa de fondo. */
+  Object.values(mbtLayers).forEach(en=>en.layer.setOpacity(baseOpacidad));
   const el=document.getElementById('baseOpValor');
   if(el) el.textContent=Math.round((1-baseOpacidad)*100)+' %';
   const sl=document.getElementById('baseOp');
@@ -1712,7 +1902,12 @@ document.getElementById('bMapLayers').onclick=()=>openSheet('sheetBase');
   const saved=loadViewState();
   if(!saved) return;
   if(saved.base && String(saved.base).indexOf('mbt_')===0){
-    setBase(saved.base);   // carga diferida (async); si el archivo ya no existe, se queda en blanco
+    /* setTimeout 0, no llamada directa: el lector de MBTiles vive más abajo en este mismo
+       script y su `let mbtIdbPromise` todavía no se ha evaluado cuando llegamos aquí.
+       Llamando en el acto saltaba un ReferenceError, se avisaba de que no se podía cargar
+       el mapa y el fondo se quedaba en blanco cada vez que se reabría la aplicación con un
+       MBTiles puesto. Al aplazarlo un turno, el script ya está entero en memoria. */
+    setTimeout(()=>setBase(saved.base),0);
   }else if(saved.base==='openfreemap'){
     setBase('openfreemap'); // carga diferida del estilo vectorial
   }else if(saved.base && baseLayers[saved.base]){
@@ -1798,7 +1993,10 @@ function loadSqlJs(){
   });
   return sqlJsPromise;
 }
-const MBT_TRANSPARENT_TILE='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+ip1sAAAAASUVORK5CYII=';
+/* 1×1 en RGBA con alfa 0. Tiene que ser transparente de verdad: el PNG que había aquí
+   era gris+alfa con los dos valores a 255, es decir blanco opaco, y cada hueco del
+   mosaico tapaba el mapa con un cuadro blanco. */
+const MBT_TRANSPARENT_TILE='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAC0lEQVR42mNgAAIAAAUAAen63NgAAAAASUVORK5CYII=';
 /* Construye la capa ol a partir de una base de datos sql.js ya abierta. Las teselas
    MBTiles usan el esquema TMS (origen abajo-izquierda); OpenLayers/XYZ usa origen
    arriba-izquierda, así que hay que invertir la fila (tile_row) en cada petición. */
@@ -1807,16 +2005,21 @@ function buildMbtilesLayer(db, meta){
   const mime=(fmt==='jpg'||fmt==='jpeg')?'image/jpeg':(fmt==='webp'?'image/webp':'image/png');
   const minZoom=(meta.minzoom!=null && meta.minzoom!=='')?parseInt(meta.minzoom,10):0;
   const maxZoom=(meta.maxzoom!=null && meta.maxzoom!=='')?parseInt(meta.maxzoom,10):19;
-  let extent=ol.proj.get('EPSG:3857').getExtent();
+  /* El "bounds" del archivo sirve para recortar la capa, NO para construir la rejilla:
+     recortando la rejilla cambian su origen y sus resoluciones, y entonces los z/x/y que
+     calcula OpenLayers ya no son los de la numeración XYZ con la que están guardadas las
+     teselas dentro del .mbtiles. Ninguna consulta encontraba nada y el mapa salía en
+     blanco. La rejilla tiene que ser la global de Web Mercator. */
+  let recorte=null;
   if(meta.bounds){
     const parts=String(meta.bounds).split(',').map(Number);
     if(parts.length===4 && parts.every(n=>!isNaN(n))){
-      try{ extent=ol.proj.transformExtent(parts,'EPSG:4326','EPSG:3857'); }catch(e){}
+      try{ recorte=ol.proj.transformExtent(parts,'EPSG:4326',P30); }catch(e){}
     }
   }
   const source=new ol.source.TileImage({
     projection:'EPSG:3857',
-    tileGrid: ol.tilegrid.createXYZ({maxZoom:Math.max(maxZoom,minZoom,1), minZoom, extent}),
+    tileGrid: ol.tilegrid.createXYZ({maxZoom:Math.max(maxZoom,minZoom,1), minZoom}),
     tileUrlFunction:(tileCoord)=>tileCoord?tileCoord.join('/'):undefined,
     tileLoadFunction:(tile,src)=>{
       const img=tile.getImage();
@@ -1842,20 +2045,72 @@ function buildMbtilesLayer(db, meta){
       }
     }
   });
-  return new ol.layer.Tile({properties:{base:true, mbtiles:true}, zIndex:0, className:'ol-base-layer', source});
+  /* zIndex 1: por encima del mapa de fondo (0) y por debajo de las capas WMS
+     superpuestas (10+). Entre varios MBTiles encendidos a la vez manda el orden en que
+     se añadieron al mapa, que es el orden en que se encendieron por primera vez. */
+  const opciones={properties:{mbtiles:true}, zIndex:1, className:'ol-base-layer', source};
+  if(recorte) opciones.extent=recorte;      // en la proyección de la vista (UTM 30N)
+  return new ol.layer.Tile(opciones);
+}
+/* Bastantes .mbtiles vienen con la tabla de metadatos incompleta (o vacía). Sin
+   "bounds" la app no sabe adónde llevar la vista y sin "minzoom/maxzoom" pide niveles
+   que el archivo no tiene. Todo eso se deduce de la propia tabla de teselas. */
+function mbtDeducirMeta(db,metaObj){
+  const out={};
+  try{
+    const r=db.exec('SELECT MIN(zoom_level),MAX(zoom_level) FROM tiles');
+    if(r.length && r[0].values[0][0]!=null){ out.minzoom=r[0].values[0][0]; out.maxzoom=r[0].values[0][1]; }
+  }catch(e){}
+  try{
+    let z=(metaObj.maxzoom!=null && metaObj.maxzoom!=='')?parseInt(metaObj.maxzoom,10):out.maxzoom;
+    if(z!=null && !isNaN(z)){
+      const r=db.exec('SELECT MIN(tile_column),MAX(tile_column),MIN(tile_row),MAX(tile_row) FROM tiles WHERE zoom_level='+(z|0));
+      if(r.length && r[0].values[0][0]!=null){
+        const v=r[0].values[0], x0=v[0], x1=v[1], tms0=v[2], tms1=v[3];
+        const n=Math.pow(2,z);
+        const lonDe=x=>x/n*360-180;
+        const latDe=y=>{const t=Math.PI-2*Math.PI*y/n; return 180/Math.PI*Math.atan(0.5*(Math.exp(t)-Math.exp(-t)));};
+        const yN=n-1-tms1, yS=n-1-tms0;               // fila TMS (abajo) → fila XYZ (arriba)
+        out.bounds=[lonDe(x0),latDe(yS+1),lonDe(x1+1),latDe(yN)].join(',');
+      }
+    }
+  }catch(e){}
+  return out;
+}
+/* Encuadra la vista sobre un MBTiles. Un archivo así solo cubre la zona de la que se
+   exportó; si la vista está en otra provincia no se ve nada y parece que no ha cargado.
+   Con soloSiFuera no se mueve cuando la vista ya pilla parte de su zona, para no dar un
+   salto molesto cada vez que se alterna de mapa de fondo. */
+function irAlMbtiles(layer,soloSiFuera){
+  const ext=layer && layer.getExtent();
+  if(!ext || ol.extent.isEmpty(ext)) return;
+  if(soloSiFuera){
+    const vista=view.calculateExtent(map.getSize());
+    if(ol.extent.intersects(ext,vista)) return;
+  }
+  view.fit(ext,{maxZoom:16,duration:400,padding:[70,70,220,70]});
 }
 /* Abre (o reutiliza si ya está abierta) la capa ol de un mapa MBTiles guardado */
+/* Cargas en curso. Sin esto, dos peticiones simultáneas del mismo mapa (la restauración
+   de la sesión y la lista de encendidos arrancan a la vez) pasarían las dos la
+   comprobación de arriba y acabarían con la misma capa añadida dos veces. */
+const mbtCargando={};
 async function ensureMbtLayer(mbtId){
   if(mbtLayers[mbtId]) return mbtLayers[mbtId];
-  const {meta,data}=await mbtLoadOne(mbtId);
-  if(!meta || !data) throw new Error('No se encontró el archivo MBTiles guardado');
-  const SQL=await loadSqlJs();
-  const sqldb=new SQL.Database(new Uint8Array(data));
-  const layer=buildMbtilesLayer(sqldb, meta);
-  map.addLayer(layer);
-  const entry={layer, db:sqldb, meta};
-  mbtLayers[mbtId]=entry;
-  return entry;
+  if(mbtCargando[mbtId]) return mbtCargando[mbtId];
+  mbtCargando[mbtId]=(async()=>{
+    const {meta,data}=await mbtLoadOne(mbtId);
+    if(!meta || !data) throw new Error('No se encontró el archivo MBTiles guardado');
+    const SQL=await loadSqlJs();
+    const sqldb=new SQL.Database(new Uint8Array(data));
+    const layer=buildMbtilesLayer(sqldb, meta);
+    map.addLayer(layer);
+    const entry={layer, db:sqldb, meta};
+    mbtLayers[mbtId]=entry;
+    return entry;
+  })();
+  try{ return await mbtCargando[mbtId]; }
+  finally{ delete mbtCargando[mbtId]; }
 }
 async function deleteMbtBase(mbtId){
   if(!confirm('¿Eliminar este mapa MBTiles del dispositivo? Esta acción no se puede deshacer.')) return;
@@ -1863,8 +2118,9 @@ async function deleteMbtBase(mbtId){
   if(entry){ map.removeLayer(entry.layer); try{entry.db.close();}catch(e){} delete mbtLayers[mbtId]; }
   mbtMetaList=mbtMetaList.filter(m=>m.id!==mbtId);
   try{ await mbtDeleteFile(mbtId); }catch(e){}
-  if(currentBase==='mbt_'+mbtId) setBase('blank');
-  renderBaseList();
+  mbtActivos=mbtActivos.filter(x=>x!==mbtId);
+  guardarMbtActivos();
+  renderMbtList();
   toast('Mapa MBTiles eliminado');
 }
 /* Importar un archivo .mbtiles nuevo desde el selector de archivos */
@@ -2003,19 +2259,26 @@ document.getElementById('mbtImportFile').onchange=async (e)=>{
     catch(err){}
     if(!hasTiles) throw new Error('El archivo no contiene teselas (tabla "tiles" vacía o inexistente)');
     const id='m'+Date.now()+'_'+Math.round(Math.random()*9999);
+    const dedu=mbtDeducirMeta(sqldb,metaObj);
+    const puesto=(v,alt)=>(v!=null && v!=='')?v:alt;
     const meta={id, name:(metaObj.name||file.name.replace(/\.mbtiles$/i,'')||'Mapa MBTiles').trim(),
-      size:file.size, format:metaObj.format||'png', minzoom:metaObj.minzoom, maxzoom:metaObj.maxzoom,
-      bounds:metaObj.bounds, addedAt:Date.now()};
+      size:file.size, format:metaObj.format||'png',
+      minzoom:puesto(metaObj.minzoom,dedu.minzoom), maxzoom:puesto(metaObj.maxzoom,dedu.maxzoom),
+      bounds:puesto(metaObj.bounds,dedu.bounds), addedAt:Date.now()};
     info.textContent='Guardando en el dispositivo…';
     await mbtSaveFile(meta, buf);
     mbtMetaList.push(meta);
     const layer=buildMbtilesLayer(sqldb, meta);
     map.addLayer(layer);
     mbtLayers[id]={layer, db:sqldb, meta};
-    renderBaseList();
+    if(mbtActivos.indexOf(id)<0) mbtActivos.push(id);
+    guardarMbtActivos();
+    layer.setVisible(true);
+    renderMbtList();
     info.textContent='';
     toast('Mapa "'+meta.name+'" importado');
-    setBase('mbt_'+id);
+    irAlMbtiles(layer,false);          // recién importado: siempre se va hasta él
+    closeSheets();
   }catch(err){
     console.error(err);
     if(sqldb){ try{sqldb.close();}catch(e){} }
@@ -2026,7 +2289,13 @@ document.getElementById('mbtImportFile').onchange=async (e)=>{
 (async function initMbtBases(){
   try{ mbtMetaList=await mbtLoadMetaAll(); }
   catch(e){ console.error('MBTiles init', e); mbtMetaList=[]; }
-  renderBaseList();
+  // Los que se quedaron encendidos la última vez se vuelven a encender solos. Si alguno
+  // ya no está guardado en el dispositivo, se cae de la lista sin dar la lata.
+  const guardados=new Set(mbtMetaList.map(m=>m.id));
+  mbtActivos=mbtActivos.filter(id=>guardados.has(id));
+  guardarMbtActivos();
+  renderMbtList();
+  for(const id of mbtActivos.slice()) await mostrarMbt(id,true);
 })();
 
 /* ===================== Servidores WMS personalizados (capas superpuestas) ===================== */
@@ -3023,46 +3292,186 @@ function trackReset(){
 /* ===================== Lista de elementos ===================== */
 const elemList=document.getElementById('elemList');
 document.getElementById('bList').onclick=()=>{refreshList();openSheet('sheetList');};
+/* Los objetos se agrupan por la capa (archivo) de la que salieron: KMZ, KML, GPX,
+   GeoJSON o shapefile. Lo dibujado a mano en la tablet forma su propio grupo. */
+const CAPA_ICONO={kmz:'🌍',kml:'🌍',gpx:'🛰️',geojson:'🧩',json:'🧩',shp:'🗂️'};
+const capasCerradas={};        // qué grupos ha plegado el usuario; se respeta al refrescar
+/* Recolorea de golpe una capa entera. El relleno de los polígonos sigue al contorno
+   conservando su transparencia: es como se creó y es lo que se espera al recolorear. */
+function aplicaColorCapa(items,col){
+  items.forEach(f=>{
+    const k=f.get('_kind')||f.getGeometry().getType();
+    if(k.indexOf('Point')>=0){
+      f.set('_color',col);
+      if(f.get('_bg')==='none' && !SPECIAL_GLYPHS[f.get('_glyph')]) f.unset('_bg');
+    }else if(k!=='Route'){
+      f.set('_stroke',col);
+      if(k.indexOf('Line')<0){
+        const previo=f.get('_fill');
+        f.set('_fill',hexToRgba(col,previo?rgbaToParts(previo).alpha:0.22));
+      }
+    }
+    f.changed();
+  });
+}
 function refreshList(){
   const feats=drawSource.getFeatures();
   if(!feats.length){elemList.innerHTML='<p class="hint">Aún no hay elementos. Usa las herramientas de abajo para crear puntos, líneas o áreas.</p>';return;}
-  elemList.innerHTML='';
-  feats.map((f,i)=>[f,i]).reverse().forEach(([f,i])=>{
-    const kind=f.get('_kind');
-    let icon='📍', detail='';
-    if(kind==='Point'){
-      const g=f.get('_glyph'); icon = SPECIAL_GLYPHS[g] ? '<img src="'+makeIconSrc(g,f.get('_color'),26,true)+'" style="width:20px;height:20px;vertical-align:middle">' : g;
-      const c=f.getGeometry().getCoordinates();
-      detail='UTM '+Math.round(c[0])+' , '+Math.round(c[1]);
-    }else if(kind==='Route'){icon='🛣️'; detail=fmtNum((f.get('_meas')||0)/1000,2)+' km';}
-    else if(kind==='LineString'){icon='📏'; detail=fmtNum(f.get('_meas'),1)+' m';}
-    else if(kind==='Polygon'){icon='⬡'; detail=fmtNum(f.get('_meas')/10000,4)+' ha';}
-    const row=document.createElement('div');
-    row.className='baseopt'; row.style.justifyContent='space-between';
-    row.innerHTML='<span style="display:flex;align-items:center;gap:6px;font-size:14px">'+
-      '<input type="checkbox" class="elcheck" data-sel="'+i+'" '+(f.get('_sel')?'checked':'')+'>'+
-      '<span style="font-size:22px">'+icon+'</span>'+
-      '<span><b>'+(f.get('name')||({Point:'Punto',LineString:'Línea',Polygon:'Área',Route:'Ruta'}[kind]||kind))+'</b><br><small style="color:#5a6b5f;font-weight:400">'+detail+'</small></span></span>'+
-      '<span style="white-space:nowrap"><button data-edit="'+i+'" style="border:none;background:#e8efe9;border-radius:8px;padding:8px 10px;margin-right:4px">✏️</button>'+
-      '<button data-go="'+i+'" style="border:none;background:#e8efe9;border-radius:8px;padding:8px 10px;margin-right:4px">🔍</button>'+
-      '<button data-del="'+i+'" style="border:none;background:#fde8e6;border-radius:8px;padding:8px 10px">🗑️</button></span>';
-    elemList.appendChild(row);
+  elemList.textContent='';
+  // Grupos en orden de aparición empezando por lo más reciente, como la lista de antes
+  const grupos=[], porNombre={};
+  feats.slice().reverse().forEach(f=>{
+    const nom=f.get('_capa')||'';
+    let g=porNombre[nom];
+    if(!g){ g=porNombre[nom]={nom:nom,tipo:f.get('_capaTipo')||'',items:[]}; grupos.push(g); }
+    g.items.push(f);
   });
-  elemList.querySelectorAll('[data-sel]').forEach(cb=>cb.onchange=()=>{
-    drawSource.getFeatures()[+cb.dataset.sel].set('_sel',cb.checked);
+  grupos.forEach(g=>{
+    const cabecera=document.createElement('div');
+    cabecera.className='capaHead';
+    const cerrado=!!capasCerradas[g.nom];
+
+    const flecha=document.createElement('button');
+    flecha.className='flecha'; flecha.textContent=cerrado?'▸':'▾';
+    flecha.title='Plegar o desplegar la capa';
+
+    const marca=document.createElement('input');
+    marca.type='checkbox'; marca.title='Marcar toda la capa (para exportar solo lo marcado)';
+    marca.checked=g.items.every(f=>f.get('_sel'));
+
+    const icono=document.createElement('span');
+    icono.style.fontSize='18px';
+    icono.textContent = g.nom ? (CAPA_ICONO[g.tipo]||'📁') : '✏️';
+
+    const nombre=document.createElement('span');
+    nombre.className='nom';
+    // textContent: el nombre sale del archivo del usuario y puede traer cualquier cosa
+    nombre.textContent = g.nom || 'Dibujado en el mapa';
+
+    const cuenta=document.createElement('span');
+    cuenta.className='cnt'; cuenta.textContent=g.items.length;
+
+    const sw=document.createElement('button');
+    sw.className='swatch'; sw.title='Color de contorno de toda la capa';
+    const primero=g.items[0];
+    sw.style.background=primero.get('_stroke')||primero.get('_color')||'#e2001a';
+
+    const zoom=document.createElement('button'); zoom.textContent='🔍'; zoom.title='Encuadrar la capa';
+    const borrar=document.createElement('button'); borrar.textContent='🗑️'; borrar.title='Eliminar la capa entera';
+
+    [flecha,marca,icono,nombre,cuenta,sw,zoom,borrar].forEach(el=>cabecera.appendChild(el));
+    elemList.appendChild(cabecera);
+
+    const paleta=document.createElement('div');
+    paleta.className='pal'; paleta.style.display='none';
+    elemList.appendChild(paleta);
+
+    const cuerpo=document.createElement('div');
+    cuerpo.className='capaBody';
+    cuerpo.style.display=cerrado?'none':'';
+    elemList.appendChild(cuerpo);
+
+    flecha.onclick=()=>{
+      const abierto=cuerpo.style.display!=='none';
+      capasCerradas[g.nom]=abierto;
+      cuerpo.style.display=abierto?'none':'';
+      flecha.textContent=abierto?'▸':'▾';
+    };
+    marca.onchange=()=>{
+      g.items.forEach(f=>f.set('_sel',marca.checked));
+      cuerpo.querySelectorAll('.elcheck').forEach(cb=>cb.checked=marca.checked);
+    };
+    sw.onclick=()=>{
+      if(paleta.style.display!=='none'){paleta.style.display='none';return;}
+      pintaPaleta(paleta,sw.style.background,c=>{
+        aplicaColorCapa(g.items,c);
+        paleta.style.display='none';
+        refreshList();
+        toast('Capa recoloreada');
+      });
+      paleta.style.display='';
+    };
+    zoom.onclick=()=>{
+      const ext=ol.extent.createEmpty();
+      g.items.forEach(f=>ol.extent.extend(ext,f.getGeometry().getExtent()));
+      if(ol.extent.isEmpty(ext)) return;
+      view.fit(ext,{maxZoom:17,duration:400,padding:[80,80,260,80]}); closeSheets();
+    };
+    // Doble toque para borrar: eliminar una capa entera de un descuido sería caro
+    let armado=false, armadoT=null;
+    borrar.onclick=()=>{
+      if(!armado){
+        armado=true; borrar.textContent='⚠️';
+        clearTimeout(armadoT);
+        armadoT=setTimeout(()=>{armado=false;borrar.textContent='🗑️';},3000);
+        toast('Pulsa de nuevo para eliminar la capa entera');
+        return;
+      }
+      g.items.forEach(f=>drawSource.removeFeature(f));
+      refreshList(); toast('Capa eliminada');
+    };
+    g.items.forEach(f=>cuerpo.appendChild(filaElemento(f)));
   });
-  elemList.querySelectorAll('[data-edit]').forEach(b=>b.onclick=()=>{
-    renameFeature(drawSource.getFeatures()[+b.dataset.edit]);
-  });
-  elemList.querySelectorAll('[data-go]').forEach(b=>b.onclick=()=>{
-    const f=drawSource.getFeatures()[+b.dataset.go];
-    const ext=f.getGeometry().getExtent();
-    view.fit(ext,{maxZoom:17,duration:400,padding:[80,80,260,80]}); closeSheets();
-  });
-  elemList.querySelectorAll('[data-del]').forEach(b=>b.onclick=()=>{
-    const f=drawSource.getFeatures()[+b.dataset.del];
+}
+/* Una fila de la lista. El nombre se pone con textContent y no con innerHTML: en las
+   capas importadas viene del archivo del usuario y podría traer etiquetas HTML. */
+function filaElemento(f){
+  const kind=f.get('_kind');
+  const geom=f.getGeometry();
+  let icon='📍', detail='', iconImg=null;
+  if(kind==='Point'){
+    const g=f.get('_glyph');
+    if(SPECIAL_GLYPHS[g]){
+      iconImg=document.createElement('img');
+      iconImg.src=makeIconSrc(g,f.get('_color'),26,true);
+      iconImg.style.cssText='width:20px;height:20px;vertical-align:middle';
+    }else icon=g;
+    // Los puntos importados pueden ser MultiPoint: se toma el primer vértice
+    const c=geom.getType()==='Point'?geom.getCoordinates():geom.getCoordinates()[0];
+    detail='UTM '+Math.round(c[0])+' , '+Math.round(c[1]);
+  }else if(kind==='Route'){icon='🛣️'; detail=fmtNum((f.get('_meas')||0)/1000,2)+' km';}
+  else if(kind==='LineString'){icon='📏'; detail=fmtNum(f.get('_meas'),1)+' m';}
+  else if(kind==='Polygon'){icon='⬡'; detail=fmtNum(f.get('_meas')/10000,4)+' ha';}
+
+  const row=document.createElement('div');
+  row.className='baseopt'; row.style.justifyContent='space-between';
+
+  const izq=document.createElement('span');
+  izq.style.cssText='display:flex;align-items:center;gap:6px;font-size:14px;min-width:0';
+  const cb=document.createElement('input');
+  cb.type='checkbox'; cb.className='elcheck'; cb.checked=!!f.get('_sel');
+  const ico=document.createElement('span');
+  ico.style.fontSize='22px';
+  if(iconImg) ico.appendChild(iconImg); else ico.textContent=icon;
+  const txt=document.createElement('span');
+  txt.style.minWidth='0';
+  const b=document.createElement('b');
+  b.textContent=f.get('name')||({Point:'Punto',LineString:'Línea',Polygon:'Área',Route:'Ruta'}[kind]||kind);
+  const small=document.createElement('small');
+  small.style.cssText='color:#5a6b5f;font-weight:400'; small.textContent=detail;
+  txt.appendChild(b); txt.appendChild(document.createElement('br')); txt.appendChild(small);
+  izq.appendChild(cb); izq.appendChild(ico); izq.appendChild(txt);
+
+  const der=document.createElement('span');
+  der.style.whiteSpace='nowrap';
+  const mkBtn=(t,fondo)=>{
+    const x=document.createElement('button');
+    x.textContent=t;
+    x.style.cssText='border:none;background:'+fondo+';border-radius:8px;padding:8px 10px;margin-left:4px';
+    der.appendChild(x); return x;
+  };
+  mkBtn('✏️','#e8efe9').onclick=()=>renameFeature(f);
+  mkBtn('🔍','#e8efe9').onclick=()=>{
+    view.fit(f.getGeometry().getExtent(),{maxZoom:17,duration:400,padding:[80,80,260,80]});
+    closeSheets();
+  };
+  mkBtn('🗑️','#fde8e6').onclick=()=>{
     drawSource.removeFeature(f); refreshList(); toast('Eliminado');
-  });
+  };
+  cb.onchange=()=>f.set('_sel',cb.checked);
+
+  row.appendChild(izq); row.appendChild(der);
+  return row;
 }
 
 /* ===================== Exportar ===================== */
@@ -3129,9 +3538,10 @@ function _crc32(bytes){
   for(let i=0;i<bytes.length;i++){c=(crc^bytes[i])&0xFF;for(let k=0;k<8;k++)c=(c&1)?(0xEDB88320^(c>>>1)):(c>>>1);crc=(crc>>>8)^c;}
   return (crc^0xFFFFFFFF)>>>0;
 }
-function kmzBlobSync(feats){
+function kmzBlobSync(feats){ return kmzFromKmlSync(buildKml(feats)); }
+function kmzFromKmlSync(kmlText){
   const enc=new TextEncoder();
-  const data=enc.encode(buildKml(feats)), name=enc.encode('doc.kml');
+  const data=enc.encode(kmlText), name=enc.encode('doc.kml');
   const crc=_crc32(data), dlen=data.length, nlen=name.length;
   /* Fecha/hora en formato DOS. Escribir 0 (que es lo que hacía antes) equivale a "día 0
      del mes 0", una fecha inválida que algunos lectores ZIP de Android rechazan al abrir
@@ -3189,10 +3599,59 @@ function downloadBlob(name,blob){
   a.href=URL.createObjectURL(blob); a.download=name; a.click();
   setTimeout(()=>URL.revokeObjectURL(a.href),1500);
 }
+
+/* ---------- Guardar o compartir archivos (iPad / iOS incluidos) ----------
+   En iPadOS y iOS, Safari sólo obedece a <a download> si el enlace se crea dentro del
+   gesto que ha dado el usuario. Si por medio hay un await (JSZip comprime de forma
+   asíncrona), un prompt() o un setTimeout, la activación ya ha caducado y el navegador
+   descarta la descarga sin error ni aviso: por eso "no dejaba exportar las rutas a KMZ".
+   La forma fiable en iPad es entregar el archivo por la hoja de compartir del sistema
+   (Guardar en Archivos, Telegram, WhatsApp, Correo…), que sí acepta varios archivos a
+   la vez. En escritorio se mantiene la descarga directa de siempre. */
+const IS_IOS = /iP(hone|ad|od)/.test(navigator.userAgent) ||
+               (navigator.platform==='MacIntel' && navigator.maxTouchPoints>1);
+/* Devuelve un File cuando el navegador lo permite (necesario para compartir); si no,
+   un Blob con la propiedad name, que sirve igualmente para descargar. */
+function namedFile(name,blob,mime){
+  try{ return new File([blob],name,{type:mime||blob.type}); }
+  catch(e){ try{ blob.name=name; }catch(_){} return blob; }
+}
+function downloadAll(files){
+  files.forEach((f,i)=>setTimeout(()=>downloadBlob(f.name,f),i*400));
+}
+function saveOrShareFiles(files,titulo){
+  if(!files || !files.length) return;
+  let puedeCompartir=false;
+  try{ puedeCompartir = !!(navigator.share && navigator.canShare && navigator.canShare({files:files})); }
+  catch(e){ puedeCompartir=false; }
+  if(puedeCompartir){
+    navigator.share({files:files,title:titulo||'Rangerviewer'})
+      .then(()=>toast(files.length===1?'📦 Archivo guardado o enviado':'📦 '+files.length+' archivos guardados o enviados'))
+      .catch(err=>{
+        if(err && err.name==='AbortError') return;            // el usuario cerró la hoja: no es un fallo
+        downloadAll(files); toast('Descargado directamente');
+      });
+    return;
+  }
+  if(IS_IOS){
+    toast('Este navegador no permite guardar archivos. Prueba con Safari o Chrome actualizados.');
+    return;
+  }
+  downloadAll(files);
+  toast(files.length===1?'Archivo descargado':files.length+' archivos descargados');
+}
+/* Nombre base tomado del campo de la hoja de exportación (sin prompt, para no perder
+   el gesto del usuario en iPad): AAMMDD_<nombre> */
+function expBaseName(){
+  const inp=document.getElementById('expName');
+  let n=(inp&&inp.value||'').trim().replace(/[^0-9A-Za-zÀ-ÿ \-_]/g,'').replace(/\s+/g,'_');
+  return dateYYMMDD()+'_'+(n||'rangerviewer');
+}
 document.getElementById('expKml').onclick=()=>{
   const feats=expFeatsOrWarn(); if(!feats) return;
-  const fn=askFilename('kml'); if(!fn) return;
-  download(fn,buildKml(feats),'application/vnd.google-earth.kml+xml'); closeSheets(); toast('KML descargado: '+fn);
+  const fn=expBaseName()+'.kml';
+  const file=namedFile(fn,new Blob([buildKml(feats)],{type:'application/vnd.google-earth.kml+xml'}));
+  closeSheets(); saveOrShareFiles([file],'Rangerviewer · KML');
 };
 function kmzBlob(feats){
   const zip=new JSZip();
@@ -3202,36 +3661,31 @@ function kmzBlob(feats){
   // archivo con extensión .zip en vez de .kmz.
   return zip.generateAsync({type:'blob',compression:'DEFLATE',mimeType:'application/vnd.google-earth.kmz'});
 }
-document.getElementById('expKmz').onclick=async ()=>{
+/* Todo el proceso es SÍNCRONO a propósito (kmzBlobSync en lugar del JSZip asíncrono):
+   así la hoja de compartir de iPadOS se abre dentro del mismo gesto del usuario. */
+document.getElementById('expKmz').onclick=()=>{
   const feats=expFeatsOrWarn(); if(!feats) return;
-  if(typeof JSZip==='undefined'){toast('No se pudo cargar el compresor (sin conexión)');return;}
-  // Agrupar por tipo: cada tipo se descarga en su propio KMZ
+  // Agrupar por tipo: cada tipo va en su propio KMZ
   const groups={Point:[],LineString:[],Polygon:[],Route:[]};
   feats.forEach(f=>groups[typeOf(f)].push(f));
   const suf={Point:'puntos',LineString:'lineas',Polygon:'poligonos',Route:'rutas'};
   const present=['Point','LineString','Polygon','Route'].filter(k=>groups[k].length);
   if(!present.length){toast('Nada que exportar');return;}
-  const fecha=dateYYMMDD();
-  let name=prompt('Nombre base para los KMZ:\n\nSe creará un archivo por tipo:\n'+
-    present.map(k=>'• '+fecha+'_<nombre>_'+suf[k]+'.kmz').join('\n'),'');
-  if(name===null) return;                                   // cancelado
-  name=(name.trim().replace(/[^0-9A-Za-zÀ-ÿ \-_]/g,'').replace(/\s+/g,'_'))||'captura';
-  closeSheets();
+  const base=expBaseName();
+  let files;
   try{
-    for(let i=0;i<present.length;i++){
-      const k=present[i];
-      const blob=await kmzBlob(groups[k]);
-      const fn=fecha+'_'+name+'_'+suf[k]+'.kmz';
-      setTimeout(()=>downloadBlob(fn,blob), i*500);          // escalonado: descargas independientes
-    }
-    toast(present.length===1?'KMZ descargado':present.length+' KMZ descargados (uno por tipo)');
-  }catch(e){toast('Error al generar KMZ');}
+    files=present.map(k=>namedFile(base+'_'+suf[k]+'.kmz',kmzBlobSync(groups[k]),
+                                   'application/vnd.google-earth.kmz'));
+  }catch(e){console.error(e);toast('Error al generar el KMZ');return;}
+  closeSheets();
+  saveOrShareFiles(files,'Rangerviewer · KMZ');
 };
 document.getElementById('expGpx').onclick=()=>{
   const feats=expFeatsOrWarn(); if(!feats) return;
-  const fn=askFilename('gpx'); if(!fn) return;
+  const fn=expBaseName()+'.gpx';
   const txt=new ol.format.GPX().writeFeatures(feats,{featureProjection:P30,dataProjection:GEO});
-  download(fn,txt,'application/gpx+xml'); closeSheets(); toast('GPX descargado: '+fn);
+  closeSheets();
+  saveOrShareFiles([namedFile(fn,new Blob([txt],{type:'application/gpx+xml'}))],'Rangerviewer · GPX');
 };
 
 /* ===================== Renombrar elementos ===================== */
@@ -3253,6 +3707,57 @@ const featPopupEl=document.getElementById('featPopup');
 const featOverlay=new ol.Overlay({element:featPopupEl,positioning:'bottom-center',offset:[0,-14],stopEvent:true,autoPan:{animation:{duration:200},margin:60}});
 map.addOverlay(featOverlay);
 let popFeat=null, fpDelArm=false, fpDelT=null;
+
+/* ===================== Paleta de 24 colores =====================
+   Los colores de contorno (y de fondo) se eligen de esta rejilla en lugar de con el
+   selector del sistema: en iPad ese selector ocupa media pantalla y sus millones de
+   tonos son indistinguibles sobre una ortofoto. Estos 24 se separan bien entre sí y
+   se ven sobre verde, sobre tierra y sobre roca. */
+const PALETA24=[
+  '#e2001a','#ff5722','#ff9800','#ffc107','#ffeb3b','#cddc39','#8bc34a','#4caf50',
+  '#009688','#00bcd4','#03a9f4','#2196f3','#3f51b5','#673ab7','#9c27b0','#e91e63',
+  '#795548','#a1887f','#607d8b','#455a64','#000000','#757575','#cfd8dc','#ffffff'
+];
+/* Rellena un contenedor .pal con los 24 botones. onPick recibe el color elegido. */
+function pintaPaleta(cont,valor,onPick){
+  cont.textContent='';
+  const actual=String(valor||'').toLowerCase();
+  PALETA24.forEach(c=>{
+    const b=document.createElement('button');
+    b.type='button'; b.style.background=c; b.title=c;
+    if(c===actual) b.className='on';
+    b.onclick=()=>onPick(c);
+    cont.appendChild(b);
+  });
+}
+/* Enlaza un botón-muestra + un input oculto + una rejilla. El input oculto conserva
+   el id que tenía el <input type="color">, así que el resto del código lo lee igual. */
+const PAL_CTL={};
+function enlazaPaleta(swId,inputId,palId,siempreAbierta){
+  const sw=swId?document.getElementById(swId):null;
+  const inp=document.getElementById(inputId), pal=document.getElementById(palId);
+  if(!inp||!pal) return;
+  const repinta=()=>{ if(sw) sw.style.background=inp.value||'#e2001a'; };
+  const dibuja=()=>pintaPaleta(pal,inp.value,c=>{
+    inp.value=c; repinta();
+    if(siempreAbierta) dibuja();            // sólo para mover la marca al nuevo color
+    else pal.style.display='none';
+  });
+  PAL_CTL[inputId]={inp:inp,pal:pal,repinta:repinta,dibuja:dibuja,siempre:!!siempreAbierta};
+  if(siempreAbierta){ dibuja(); }
+  else if(sw){ sw.onclick=()=>{
+    if(pal.style.display!=='none'){ pal.style.display='none'; return; }
+    dibuja(); pal.style.display='';
+  }; }
+  repinta();
+}
+/* Cambia el color desde código (al abrir el globo con los datos del elemento) */
+function setPaletaVal(inputId,v){
+  const c=PAL_CTL[inputId]; if(!c) return;
+  c.inp.value=v; c.repinta();
+  if(c.siempre) c.dibuja(); else c.pal.style.display='none';
+}
+
 /* Convierte un color hexadecimal (#rrggbb) en rgba(...) con la transparencia dada,
    para poder derivar el relleno de un polígono a partir del color de su borde. */
 function hexToRgba(hex,alpha){
@@ -3260,38 +3765,132 @@ function hexToRgba(hex,alpha){
   const r=parseInt(h.substring(0,2),16)||0, g=parseInt(h.substring(2,4),16)||0, b=parseInt(h.substring(4,6),16)||0;
   return 'rgba('+r+','+g+','+b+','+alpha+')';
 }
+/* Camino inverso: de 'rgba(r,g,b,a)' o '#rrggbb' a {hex,alpha}, para poder rellenar los
+   selectores del globo con el relleno que ya tenga el polígono. */
+function rgbaToParts(v){
+  const s=String(v||'').trim();
+  const m=s.match(/^rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*(?:,\s*([\d.]+)\s*)?\)$/i);
+  const hex2=n=>('0'+Math.max(0,Math.min(255,Math.round(n))).toString(16)).slice(-2);
+  if(m) return {hex:'#'+hex2(+m[1])+hex2(+m[2])+hex2(+m[3]), alpha:m[4]==null?1:parseFloat(m[4])};
+  if(/^#[0-9a-f]{6}$/i.test(s)) return {hex:s.toLowerCase(), alpha:1};
+  return {hex:'#2e8b4f', alpha:0.22};
+}
+/* Claves que son de uso interno del visor o de OpenLayers y no deben aparecer como
+   "datos del archivo": las internas empiezan por _, y name/geometry ya se ven aparte. */
+const FP_OCULTAS={geometry:1,name:1,styleUrl:1,_sel:1};
+function featAttrKeys(f){
+  const orden=f.get('_attrsOrder');
+  const props=f.getProperties();
+  const claves=(orden&&orden.length?orden:Object.keys(props))
+    .filter(k=>!FP_OCULTAS[k] && k.charAt(0)!=='_' && props[k]!=null && props[k]!=='');
+  return claves.filter(k=>typeof props[k]!=='object' || props[k] instanceof Date);
+}
+/* La tabla se construye con nodos de texto, nunca con innerHTML: los valores vienen de
+   un archivo de terceros y podrían llevar etiquetas HTML. */
+function renderFeatAttrs(f){
+  const caja=document.getElementById('fpAttrBox'), cont=document.getElementById('fpAttr');
+  const claves=featAttrKeys(f);
+  cont.textContent='';
+  if(!claves.length){ caja.style.display='none'; featPopupEl.classList.remove('wide'); return; }
+  const tabla=document.createElement('table');
+  claves.forEach(k=>{
+    const tr=document.createElement('tr');
+    const th=document.createElement('th'); th.textContent=k;
+    const td=document.createElement('td');
+    const v=f.get(k);
+    td.textContent = typeof v==='number' ? fmtNum(v, Number.isInteger(v)?0:3) : String(v);
+    tr.appendChild(th); tr.appendChild(td); tabla.appendChild(tr);
+  });
+  cont.appendChild(tabla);
+  caja.style.display='';
+  document.getElementById('fpAttrTog').textContent='▸ Datos del archivo ('+claves.length+')';
+  cont.style.display='none';
+  featPopupEl.classList.add('wide');
+}
+document.getElementById('fpAttrTog').onclick=function(){
+  const cont=document.getElementById('fpAttr');
+  const abierto=cont.style.display!=='none';
+  cont.style.display=abierto?'none':'';
+  this.textContent=(abierto?'▸':'▾')+this.textContent.slice(1);
+};
+document.getElementById('fpAlpha').oninput=function(){
+  document.getElementById('fpAlphaVal').textContent=this.value+'%';
+};
+enlazaPaleta('fpColorSw','fpColor','fpColorPal');
+enlazaPaleta('fpFillSw','fpFill','fpFillPal');
+/* En la hoja del shapefile hay sitio de sobra: la rejilla se deja siempre a la vista */
+enlazaPaleta(null,'shpColor','shpColorPal',true);
 function openFeatPopup(f,coord){
   popFeat=f; fpDelArm=false; clearTimeout(fpDelT); document.getElementById('fpDel').textContent='🗑️';
   document.getElementById('fpName').value=f.get('name')||'';
   const k=f.get('_kind')||f.getGeometry().getType(); let info='';
   const colorRow=document.getElementById('fpColorRow'), colorInp=document.getElementById('fpColor');
-  if(k.indexOf('Point')>=0){const c=f.getGeometry().getCoordinates(),g=ol.proj.transform(c,P30,GEO);
+  const fillRow =document.getElementById('fpFillRow');
+  const anchoInp=document.getElementById('fpWidth'),    alphaInp=document.getElementById('fpAlpha');
+  const colorLab=document.getElementById('fpColorLab');
+  fillRow.style.display='none';
+  if(k.indexOf('Point')>=0){
+    const geom=f.getGeometry();
+    // Los puntos importados pueden ser MultiPoint: se toma el primer vértice para el rótulo
+    const c=geom.getType()==='Point'?geom.getCoordinates():geom.getCoordinates()[0];
+    const g=ol.proj.transform(c,P30,GEO);
     info='UTM30 '+Math.round(c[0])+' '+Math.round(c[1])+'  ·  '+g[1].toFixed(5)+', '+g[0].toFixed(5);
-    colorRow.style.display='none';
+    // En un punto la barra no es el grosor sino el tamaño de la chincheta
+    colorLab.textContent='Color';
+    setPaletaVal('fpColor',f.get('_color')||'#e2001a');
+    anchoInp.min=20; anchoInp.max=60; anchoInp.step=2; anchoInp.value=f.get('_size')||34;
+    anchoInp.title='Tamaño del símbolo';
+    colorRow.style.display='flex';
   }else if(k==='Route'){
     info='Ruta · '+fmtNum((f.get('_meas')||0)/1000,2)+' km';
     colorRow.style.display='none';
-  }else if(k.indexOf('Line')>=0){
-    info='Línea · '+fmtNum((f.get('_meas')||0),1)+' m';
-    colorInp.value=f.get('_stroke')||'#d83a2e'; colorRow.style.display='flex';
   }else{
-    info='Polígono · '+fmtNum((f.get('_meas')||0)/10000,4)+' ha';
-    colorInp.value=f.get('_stroke')||'#d83a2e'; colorRow.style.display='flex';
+    const linea=k.indexOf('Line')>=0;
+    info = linea ? 'Línea · '+fmtNum((f.get('_meas')||0),1)+' m'
+                 : 'Polígono · '+fmtNum((f.get('_meas')||0)/10000,4)+' ha';
+    colorLab.textContent='Contorno';
+    setPaletaVal('fpColor',f.get('_stroke')||'#e2001a');
+    anchoInp.min=1; anchoInp.max=12; anchoInp.step=1; anchoInp.value=f.get('_width')||(linea?4:3);
+    anchoInp.title='Grosor del contorno';
+    colorRow.style.display='flex';
+    if(!linea){                                  // el fondo sólo tiene sentido en polígonos
+      const p=rgbaToParts(f.get('_fill')||hexToRgba(colorInp.value,0.22));
+      setPaletaVal('fpFill',p.hex);
+      alphaInp.value=Math.round(p.alpha*100);
+      document.getElementById('fpAlphaVal').textContent=Math.round(p.alpha*100)+'%';
+      fillRow.style.display='flex';
+    }
   }
   document.getElementById('fpInfo').textContent=info;
+  renderFeatAttrs(f);
   featOverlay.setPosition(coord); featPopupEl.style.display='block';
 }
-function closeFeatPopup(){featPopupEl.style.display='none';featOverlay.setPosition(undefined);popFeat=null;}
+function closeFeatPopup(){
+  document.getElementById('fpColorPal').style.display='none';
+  document.getElementById('fpFillPal').style.display='none';
+  featPopupEl.style.display='none';featOverlay.setPosition(undefined);popFeat=null;
+}
 document.getElementById('fpClose').onclick=closeFeatPopup;
 document.getElementById('fpSave').onclick=()=>{
   if(!popFeat)return;
   const v=document.getElementById('fpName').value.trim();
   if(v)popFeat.set('name',v);else popFeat.unset('name');
   const k=popFeat.get('_kind')||popFeat.getGeometry().getType();
-  if(k.indexOf('Point')<0 && k!=='Route'){
-    const col=document.getElementById('fpColor').value;
+  const col=document.getElementById('fpColor').value;
+  const ancho=parseInt(document.getElementById('fpWidth').value,10);
+  if(k.indexOf('Point')>=0){
+    popFeat.set('_color',col);
+    if(ancho) popFeat.set('_size',ancho);
+    // Con fondo transparente sólo se ve el emoji y el color no se aprecia: al cambiarlo
+    // a mano se vuelve a la chincheta coloreada, que es donde el color sí se ve.
+    if(popFeat.get('_bg')==='none' && !SPECIAL_GLYPHS[popFeat.get('_glyph')]) popFeat.unset('_bg');
+  }else if(k!=='Route'){
     popFeat.set('_stroke',col);
-    if(k.indexOf('Line')<0) popFeat.set('_fill',hexToRgba(col,0.22)); // relleno solo para polígonos
+    if(ancho) popFeat.set('_width',ancho);
+    if(k.indexOf('Line')<0){                     // fondo: sólo los polígonos lo tienen
+      const alpha=parseInt(document.getElementById('fpAlpha').value,10)/100;
+      popFeat.set('_fill',hexToRgba(document.getElementById('fpFill').value,alpha));
+    }
   }
   popFeat.changed(); refreshList(); toast('Guardado'); closeFeatPopup();
 };
@@ -3457,11 +4056,253 @@ function tagImported(f){
     if(!f.get('name')) f.set('name','Área importada');
   }
 }
+/* ===================== Shapefile comprimido (.zip) =====================
+   Lector propio de shapefile: con JSZip (ya cargado para los KMZ) se abren los
+   ficheros del zip y aquí se interpretan el .shp (geometrías), el .dbf (tabla de
+   atributos) y el .prj (sistema de coordenadas, reproyectado con proj4, que también
+   está cargado). Se hace a mano en vez de traer otra librería para que la app siga
+   funcionando sin conexión y sin depender de un CDN más. */
+
+/* Área con signo de un anillo: negativa = sentido horario. En un shapefile los
+   anillos exteriores van en sentido horario y los interiores (huecos) al revés,
+   que es la única forma de saber qué anillo es hueco de qué polígono. */
+function shpRingArea(r){
+  let a=0;
+  for(let i=0,n=r.length;i<n;i++){const p=r[i],q=r[(i+1)%n];a+=p[0]*q[1]-q[0]*p[1];}
+  return a/2;
+}
+function shpGeometry(dv,pos){
+  const type=dv.getInt32(pos,true);
+  if(type===0) return null;                       // registro nulo
+  const base=type%10;                             // 11/21 → 1, 13/23 → 3, 15/25 → 5, 18/28 → 8
+  let o=pos+4;
+  if(base===1) return {type:'Point',coordinates:[dv.getFloat64(o,true),dv.getFloat64(o+8,true)]};
+  if(base===8){
+    o+=32;                                        // caja envolvente
+    const n=dv.getInt32(o,true); o+=4;
+    const c=[];
+    for(let i=0;i<n;i++){c.push([dv.getFloat64(o,true),dv.getFloat64(o+8,true)]);o+=16;}
+    return c.length?{type:'MultiPoint',coordinates:c}:null;
+  }
+  if(base!==3 && base!==5) return null;            // tipos raros (multipatch…): se ignoran
+  o+=32;
+  const nParts=dv.getInt32(o,true); o+=4;
+  const nPts  =dv.getInt32(o,true); o+=4;
+  const parts=[]; for(let i=0;i<nParts;i++){parts.push(dv.getInt32(o,true));o+=4;}
+  const pts=[];   for(let i=0;i<nPts;i++){pts.push([dv.getFloat64(o,true),dv.getFloat64(o+8,true)]);o+=16;}
+  const rings=[];
+  for(let i=0;i<nParts;i++){
+    const r=pts.slice(parts[i], i+1<nParts?parts[i+1]:nPts);
+    if(r.length>1) rings.push(r);
+  }
+  if(!rings.length) return null;
+  if(base===3) return rings.length===1?{type:'LineString',coordinates:rings[0]}
+                                      :{type:'MultiLineString',coordinates:rings};
+  const polys=[];
+  rings.forEach(r=>{
+    if(shpRingArea(r)<0 || !polys.length) polys.push([r]);   // horario → nuevo polígono
+    else polys[polys.length-1].push(r);                      // antihorario → hueco del anterior
+  });
+  return polys.length===1?{type:'Polygon',coordinates:polys[0]}
+                         :{type:'MultiPolygon',coordinates:polys};
+}
+function parseSHP(buf){
+  const dv=new DataView(buf);
+  if(dv.getInt32(0,false)!==9994) throw new Error('El .shp no tiene la cabecera esperada');
+  const geoms=[]; let pos=100;
+  while(pos+8<=buf.byteLength){
+    const clen=dv.getInt32(pos+4,false)*2;        // longitud del contenido, en palabras de 16 bits
+    if(clen<=0 || pos+8+clen>buf.byteLength) break;
+    geoms.push(shpGeometry(dv,pos+8));
+    pos+=8+clen;
+  }
+  return geoms;
+}
+/* El .dbf no lleva la codificación de forma fiable: se intenta UTF-8 y, si los bytes no
+   son UTF-8 válido (lo habitual en shapefiles españoles antiguos), se lee como
+   windows-1252, que es lo que escriben ArcGIS y QGIS por omisión. */
+function dbfText(bytes,enc){
+  if(!enc||enc==='auto'){
+    try{ return new TextDecoder('utf-8',{fatal:true}).decode(bytes); }
+    catch(e){ enc='windows-1252'; }
+  }
+  try{ return new TextDecoder(enc).decode(bytes); }
+  catch(e){ let s=''; for(let i=0;i<bytes.length;i++) s+=String.fromCharCode(bytes[i]); return s; }
+}
+function parseDBF(buf,enc){
+  const dv=new DataView(buf), u8=new Uint8Array(buf);
+  const nRec=dv.getInt32(4,true), hLen=dv.getUint16(8,true), rLen=dv.getUint16(10,true);
+  const fields=[]; let o=32;
+  while(o+32<=hLen && u8[o]!==0x0D && u8[o]!==0x00){
+    fields.push({
+      name:dbfText(u8.subarray(o,o+11),enc).replace(/\0[\s\S]*$/,'').trim(),
+      type:String.fromCharCode(u8[o+11]),
+      len :u8[o+16]
+    });
+    o+=32;
+  }
+  const rows=[];
+  for(let i=0;i<nRec;i++){
+    let p=hLen+i*rLen;
+    if(p+rLen>buf.byteLength) break;
+    const borrado=u8[p]===0x2A;                  // '*' = registro marcado como borrado
+    p+=1;
+    const row={};
+    fields.forEach(f=>{
+      const raw=dbfText(u8.subarray(p,p+f.len),enc).trim(); p+=f.len;
+      if(f.type==='N'||f.type==='F'){const v=parseFloat(raw.replace(',','.'));row[f.name]=isNaN(v)?null:v;}
+      else if(f.type==='L') row[f.name]= /^[YyTt]$/.test(raw)?true:(/^[NnFf]$/.test(raw)?false:null);
+      else if(f.type==='D'&&raw.length===8) row[f.name]=raw.slice(6,8)+'/'+raw.slice(4,6)+'/'+raw.slice(0,4);
+      else row[f.name]=raw;
+    });
+    if(!borrado) rows.push(row); else rows.push(null);
+  }
+  return {fields:fields,rows:rows};
+}
+/* Devuelve una función que pasa una coordenada del shapefile a la proyección del mapa.
+   Con .prj se usa su definición (proj4 entiende WKT); sin él se adivina por el rango:
+   grados → EPSG:4326, metros → se asume que ya está en UTM 30N ETRS89 como el mapa. */
+function shpReproyector(prjTxt,muestra){
+  if(prjTxt){
+    try{
+      const src=proj4(prjTxt.trim());
+      const t=proj4(src,proj4(P30));
+      const p=t.forward([muestra[0],muestra[1]]);
+      if(isFinite(p[0])&&isFinite(p[1])) return c=>t.forward([c[0],c[1]]);
+    }catch(e){ console.warn('No se pudo interpretar el .prj:',e); }
+  }
+  if(Math.abs(muestra[0])<=180 && Math.abs(muestra[1])<=90){
+    const t=proj4(proj4(GEO),proj4(P30));
+    return c=>t.forward([c[0],c[1]]);
+  }
+  return c=>[c[0],c[1]];                          // ya en metros: se asume UTM 30N
+}
+function shpMapCoords(g,fn){
+  if(g.type==='Point') return {type:g.type,coordinates:fn(g.coordinates)};
+  if(g.type==='MultiPoint'||g.type==='LineString') return {type:g.type,coordinates:g.coordinates.map(fn)};
+  if(g.type==='MultiLineString'||g.type==='Polygon') return {type:g.type,coordinates:g.coordinates.map(r=>r.map(fn))};
+  return {type:g.type,coordinates:g.coordinates.map(p=>p.map(r=>r.map(fn)))};
+}
+
+/* Estado del shapefile pendiente de confirmar en la hoja #sheetShp */
+let shpPend=null;
+async function readShapefileZip(file){
+  if(typeof JSZip==='undefined'){toast('Sin conexión: no se puede abrir el ZIP');return;}
+  const zip=await JSZip.loadAsync(await file.arrayBuffer());
+  const nombres=Object.keys(zip.files).filter(n=>!zip.files[n].dir && !/(^|\/)__MACOSX\//.test(n));
+  const shpName=nombres.find(n=>/\.shp$/i.test(n));
+  if(!shpName){toast('El ZIP no contiene ningún .shp');return;}
+  const raiz=shpName.replace(/\.shp$/i,'');
+  const hermano=ext=>nombres.find(n=>n.toLowerCase()===(raiz+ext).toLowerCase());
+  const geoms=parseSHP(await zip.files[shpName].async('arraybuffer'));
+
+  let enc='auto';
+  const cpgName=hermano('.cpg');
+  if(cpgName){
+    const cpg=(await zip.files[cpgName].async('text')).trim().toLowerCase();
+    if(/utf-?8/.test(cpg)) enc='utf-8';
+    else if(/1252|ansi|latin ?1|8859-1/.test(cpg)) enc='windows-1252';
+  }
+  let tabla={fields:[],rows:[]};
+  const dbfName=hermano('.dbf');
+  if(dbfName){ try{ tabla=parseDBF(await zip.files[dbfName].async('arraybuffer'),enc); }
+               catch(e){ console.warn('No se pudo leer el .dbf:',e); } }
+  const prjName=hermano('.prj');
+  const prjTxt = prjName ? await zip.files[prjName].async('text') : null;
+
+  const primera=geoms.find(g=>g);
+  if(!primera){toast('El shapefile no contiene geometrías');return;}
+  const muestra=primera.type==='Point'?primera.coordinates
+              :primera.type==='MultiPoint'||primera.type==='LineString'?primera.coordinates[0]
+              :primera.type==='MultiLineString'||primera.type==='Polygon'?primera.coordinates[0][0]
+              :primera.coordinates[0][0][0];
+  const proy=shpReproyector(prjTxt,muestra);
+
+  shpPend={
+    nombre:(file.name||'shapefile').replace(/\.zip$/i,''),
+    geoms:geoms, tabla:tabla, proy:proy,
+    tipo: primera.type.indexOf('Point')>=0?'Point':(primera.type.indexOf('Line')>=0?'LineString':'Polygon')
+  };
+
+  // Campos de texto candidatos a etiqueta, con el más probable el primero
+  const sel=document.getElementById('shpField');
+  sel.innerHTML='<option value="">(sin texto)</option>';
+  const PREF=['NOMBRE','NOM','NAME','TEXTO','ETIQUETA','LABEL','DESCRIP','DESCRIPCION','TITULO','ROTULO','MUNICIPIO','PARAJE','COD','CODIGO','ID'];
+  const orden=tabla.fields.slice().sort((a,b)=>{
+    const ia=PREF.findIndex(p=>a.name.toUpperCase().indexOf(p)===0);
+    const ib=PREF.findIndex(p=>b.name.toUpperCase().indexOf(p)===0);
+    return (ia<0?99:ia)-(ib<0?99:ib);
+  });
+  orden.forEach(f=>{
+    const o=document.createElement('option'); o.value=f.name; o.textContent=f.name; sel.appendChild(o);
+  });
+  if(orden.length) sel.value=orden[0].name;
+
+  const n=geoms.filter(g=>g).length;
+  document.getElementById('shpInfo').innerHTML=
+    '<b>'+shpPend.nombre+'</b> · '+n+' elemento(s) · '+
+    ({Point:'puntos',LineString:'líneas',Polygon:'polígonos'}[shpPend.tipo])+
+    (prjTxt?' · reproyectado desde el .prj':' · <b>sin .prj</b>: se asume UTM 30N / geográficas');
+  document.getElementById('shpGlyph').parentElement.style.display = shpPend.tipo==='Point'?'':'none';
+  openSheet('sheetShp');
+}
+document.getElementById('shpAdd').onclick=()=>{
+  if(!shpPend){toast('No hay ningún shapefile cargado');return;}
+  const campo=document.getElementById('shpField').value;
+  const col  =document.getElementById('shpColor').value;
+  const glyph=(document.getElementById('shpGlyph').value||'📍').trim()||'📍';
+  const gj=new ol.format.GeoJSON();
+  const añadidas=[];
+  shpPend.geoms.forEach((g,i)=>{
+    if(!g) return;
+    const attrs=shpPend.tabla.rows[i];
+    if(attrs===null) return;                       // registro borrado en el .dbf
+    let f;
+    try{ f=gj.readFeature({type:'Feature',geometry:shpMapCoords(g,shpPend.proy),properties:{}}); }
+    catch(e){ return; }                            // geometría corrupta: se salta
+    if(!f.getGeometry()) return;
+    if(attrs){
+      // Los atributos se copian tal cual, salvo los nombres reservados por OpenLayers
+      // (geometry) y los internos del visor (los que empiezan por _), que romperían
+      // el estilo o la geometría de la feature.
+      const puestos=[];
+      Object.keys(attrs).forEach(k=>{
+        if(k==='geometry'||k.charAt(0)==='_'||k==='name') return;
+        if(attrs[k]!==null&&attrs[k]!==''){ f.set(k,attrs[k]); puestos.push(k); }
+      });
+      // Orden original de las columnas del .dbf, para que el globo del mapa muestre
+      // la ficha como en la tabla de atributos y no en orden alfabético
+      if(puestos.length) f.set('_attrsOrder',puestos);
+      if(campo && attrs[campo]!=null && String(attrs[campo]).trim()!=='') f.set('name',String(attrs[campo]).trim());
+    }
+    f.set('_shp',shpPend.nombre);                  // de qué capa vino, por si hace falta
+    f.set('_capa',shpPend.nombre); f.set('_capaTipo','shp');
+    if(shpPend.tipo==='Point'){ f.set('_color',col); f.set('_glyph',glyph); }
+    else { f.set('_stroke',col); if(shpPend.tipo==='Polygon') f.set('_fill',hexToRgba(col,0.22)); }
+    if(!f.get('name')) f.set('name',shpPend.nombre+' '+(añadidas.length+1));
+    tagImported(f);
+    drawSource.addFeature(f);
+    añadidas.push(f);
+  });
+  shpPend=null;
+  if(!añadidas.length){toast('No se pudo añadir ningún elemento');closeSheets();return;}
+  refreshList();
+  const ext=ol.extent.createEmpty();
+  añadidas.forEach(f=>ol.extent.extend(ext,f.getGeometry().getExtent()));
+  if(!ol.extent.isEmpty(ext)) view.fit(ext,{maxZoom:17,duration:500,padding:[90,90,280,90]});
+  closeSheets();
+  toast(añadidas.length+' elemento(s) del shapefile añadidos · toca uno para cambiar texto o color');
+};
+
 async function handleImportFile(file){
   const name=(file.name||'').toLowerCase();
   const opt={dataProjection:GEO,featureProjection:P30};
   try{
     let feats=[];
+    if(name.endsWith('.zip')){
+      await readShapefileZip(file);
+      return;                                     // continúa en la hoja de opciones
+    }
     if(name.endsWith('.kmz')){
       if(typeof JSZip==='undefined'){toast('Sin conexión: no se puede abrir KMZ');return;}
       const zip=await JSZip.loadAsync(await file.arrayBuffer());
@@ -3478,7 +4319,14 @@ async function handleImportFile(file){
     }
     feats=feats.filter(f=>f.getGeometry());
     if(!feats.length){toast('No se encontraron elementos en el archivo');return;}
-    feats.forEach(f=>{tagImported(f);drawSource.addFeature(f);});
+    // Cada objeto recuerda de qué archivo vino, para que la lista pueda agruparlos
+    // por capa en vez de mezclar en un montón único todo lo importado.
+    const capa=(file.name||'').replace(/\.[^.]+$/,'')||'Importado';
+    const capaTipo=name.split('.').pop();
+    feats.forEach(f=>{
+      f.set('_capa',capa); f.set('_capaTipo',capaTipo);
+      tagImported(f); drawSource.addFeature(f);
+    });
     refreshList();
     const ext=ol.extent.createEmpty();
     feats.forEach(f=>ol.extent.extend(ext,f.getGeometry().getExtent()));
@@ -4546,9 +5394,11 @@ async function sigpacSearch(){
 document.getElementById('spSearch').onclick=sigpacSearch;
 document.getElementById('spKmz').onclick=()=>{
   if(!lastSigpacFeats||!lastSigpacFeats.length){toast('Busca una parcela primero');return;}
-  if(typeof JSZip==='undefined'){toast('Sin conexión: no se puede crear el KMZ');return;}
-  kmzBlob(lastSigpacFeats).then(blob=>{downloadBlob(dateYYMMDD()+'_SIGPAC.kmz',blob);toast('KMZ SIGPAC descargado');})
-    .catch(()=>toast('Error al generar el KMZ'));
+  // Síncrono para no perder el gesto del usuario en iPad (ver saveOrShareFiles)
+  let file;
+  try{ file=namedFile(dateYYMMDD()+'_SIGPAC.kmz',kmzBlobSync(lastSigpacFeats),'application/vnd.google-earth.kmz'); }
+  catch(e){ toast('Error al generar el KMZ'); return; }
+  saveOrShareFiles([file],'Rangerviewer · SIGPAC');
 };
 
 
@@ -5676,17 +6526,19 @@ ${pms}
     document.body.appendChild(a); a.click(); a.remove();
     setTimeout(() => URL.revokeObjectURL(url), 2000);
   }
-  async function descargarKMZ(list, etiqueta){
+  /* Síncrono a propósito: en iPad la compresión asíncrona de JSZip agota el gesto del
+     usuario y Safari descarta el archivo sin avisar (ver saveOrShareFiles). */
+  function descargarKMZ(list, etiqueta){
     if(!list.length){ toast('No hay rayos que descargar en la vista actual.'); return; }
-    if(typeof JSZip === 'undefined'){ toast('JSZip no se ha cargado.'); return; }
     const kml = buildKML(list, `Rayos ${etiqueta} (${list.length}) - ${fmtLocal(Date.now())}`);
-    const zip = new JSZip();
-    zip.file('doc.kml', kml);
-    const blob = await zip.generateAsync({type:'blob', mimeType:'application/vnd.google-earth.kmz'});
     const pad = n => String(n).padStart(2,'0');
     const d = new Date();
     const stamp = `${d.getFullYear()}${pad(d.getMonth()+1)}${pad(d.getDate())}_${pad(d.getHours())}${pad(d.getMinutes())}${pad(d.getSeconds())}`;
-    triggerDownload(blob, `rayos_${etiqueta.replace(/\s+/g,'_')}_${stamp}.kmz`);
+    const fn = `rayos_${etiqueta.replace(/\s+/g,'_')}_${stamp}.kmz`;
+    let file;
+    try{ file = namedFile(fn, kmzFromKmlSync(kml), 'application/vnd.google-earth.kmz'); }
+    catch(e){ toast('Error al generar el KMZ'); return; }
+    saveOrShareFiles([file], 'Rangerviewer · Rayos');
   }
 
   /* Wiring del menú y del panel */
